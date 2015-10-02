@@ -1,4 +1,7 @@
 # gulp-exist
+
+[![version](https://img.shields.io/npm/v/vinyl-ftp.svg)](https://www.npmjs.com/package/vinyl-ftp)
+
 > A gulp plugin to deploy to eXist-db 
 
 Using eXist's XML-RPC API.
