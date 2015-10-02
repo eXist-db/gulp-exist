@@ -1,6 +1,8 @@
 # gulp-exist
 > A gulp plugin to deploy to eXist-db 
 
+Using eXist's XML-RPC API.
+
 ## Usage
 
 ```js
@@ -31,50 +33,50 @@ gulp.task('deploy-local', function() {
 
 #### options.host
 
-Type: `string`
+Type: `string`  
 Default: `'localhost'`
 
 #### options.port
 
-Type: `number`
+Type: `number`  
 Default: `8080`
 
 #### options.path
 
 Path to eXist's XML-RPC endpoint
 
-Type: `string`
+Type: `string`  
 Default: `'/exist/xmlrpc'`
 
 #### options.username
 
-*Required*
+*Required*  
 Type: `string`
 
 #### options.password
 
-*Required*
+*Required*  
 Type: `string`
 
 #### options.target
 
 Remote deployment target collection. Non-existent collections will be created.
 
-Type: `string`
+Type: `string`  
 Default `'/db'`
 
 #### options.changed_only
 
 Only upload changed files
 
-Type: `boolean`
+Type: `boolean`  
 Default: `false`
 
 #### options.permissions
 
 Specify remote permissions for files
 
-Type: `Object`
+Type: `Object`  
 Default: `{}`
 
 #### post_install
