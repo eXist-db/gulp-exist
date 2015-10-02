@@ -57,7 +57,8 @@ module.exports = function(options) {
 		})(),
 		create_collection: options.hasOwnProperty("create_collection")? options.create_collection : true,
 		changed_only: options.hasOwnProperty("changed_only") && options.changed_only,
-		post_install: options.post_install
+		post_install: options.post_install,
+		permissions: options.permissions || {}
 	};
 
 
@@ -95,17 +96,34 @@ module.exports = function(options) {
 				return Mime.lookup(file.path);
 		})();
 
-		gutil.log('Storing "' + file.path + '" (' + mime + ')...');
-		client.methodCall('upload', [file.contents, file.contents.length], function(error, handle) {
-			if (error) {
-				callback(new PluginError("gulp-exist", error));
+		var uploadFile = function(callback){
+			client.methodCall('upload', [file.contents, file.contents.length], callback);
+		}
+
+		var parseFile = function(fileHandle, callback) {
+			client.methodCall('parseLocal', [fileHandle, conf.target + file.relative, true, mime], callback);
+		}
+
+		var setPermissions = function(result, callback) {
+			if (conf.permissions && conf.permissions[file.relative]) {
+				gutil.log('Setting permissions for "' + file.relative + '" (' + conf.permissions[file.relative] + ')...');
+				client.methodCall(
+					'setPermissions',
+					[conf.target + file.relative, conf.permissions[file.relative]],
+					callback
+				);
 				return;
 			}
 
-			gutil.log('Parsing "' + file.relative + '" (' + mime + ')...');
-			client.methodCall('parseLocal', [handle, conf.target + file.relative, true, mime], callback);
+			callback(null);
+		};
 
-		});		
+		gutil.log('Storing "' + file.path + '" (' + mime + ')...');
+		async.waterfall([
+			uploadFile,
+			parseFile,
+			setPermissions
+		], callback);	
 	};
 
 	var getLastModified = function(target, callback) {
