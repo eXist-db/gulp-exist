@@ -12,6 +12,7 @@ var lastModifiedXQL = (function () {/*
 	declare namespace json="http://www.json.org";
 	declare option exist:serialize "method=json media-type=text/javascript";
 	declare function local:ls($collection as xs:string) as element()* {
+		  <collections json:array="true">{$collection}</collections>,
 	      for $child in xmldb:get-child-collections($collection)
 	      let $path := concat($collection, '/', $child)
 	      order by $child 
@@ -63,8 +64,17 @@ module.exports = function(options) {
 
 
 	var lastModifiedMap = null;
+	var existingCollections = null;
 	var firstFile = null;
 
+	function createCollectionIfNotExistent(collection, callback) {
+		if (existingCollections.indexOf(collection) > -1) {
+			callback(); return;
+		}
+
+		gutil.log('Creating collection "' + collection + '"...');
+		client.methodCall('createCollection', [collection], callback);
+	}
 
 	var storeFile = function(file, enc, callback) {
 		if (file.isStream()) {
@@ -72,9 +82,7 @@ module.exports = function(options) {
 		}
 
 		if (file.isDirectory()) {
-			var collectionPath = conf.target  + file.relative;
-			gutil.log('Creating collection "' + collectionPath + '"...');
-			client.methodCall('createCollection', [collectionPath], callback);
+			createCollectionIfNotExistent(conf.target  + file.relative, callback);
 			return;
 		}
 
@@ -82,7 +90,7 @@ module.exports = function(options) {
 			callback(); return;
 		}
 
-		if (lastModifiedMap
+		if (conf.changed_only
 			&& lastModifiedMap[file.relative] >= fs.statSync(file.path).mtime) {
 			callback(); return;
 		}
@@ -126,9 +134,11 @@ module.exports = function(options) {
 		], callback);	
 	};
 
-	var getLastModified = function(target, callback) {
-		var xql = lastModifiedXQL + ' 	\
-			<result>{local:ls("' + target + '")}</result> 	\
+	function getCollectionInfo(target, callback) {
+		var xql = lastModifiedXQL + ' 							\
+				if (xmldb:collection-available("' + target + '")) then \
+					<result>{local:ls("' + target + '")}</result> 			\
+				else ()									\
 		';
 
 		client.methodCall('query', [xql, 1, 1, {}], function(error, result) {
@@ -137,20 +147,32 @@ module.exports = function(options) {
 			}
 
 			var resultJson = result.replace(/(<([^>]+)>)/ig,"").replace(/\s/g, "");
-			if (resultJson == "null") {
-				callback(null, {files: []}); return;
+			if (resultJson == "" || resultJson == "null") {
+				callback();
+				return;
 			}
-			
-			var map = {};
-			JSON.parse(resultJson).files.forEach(function(item) {
-				var normalizedPath = decodeURIComponent(item.path
-										.replace(conf.target, "")
-										.replace(/^\//, "")
-									);
 
-				map[normalizedPath] = new Date(item.mod);
-			})
-			callback(null, map);
+			var parsedResult = JSON.parse(resultJson);
+
+			var modifiedMap = {};
+			if (parsedResult.files) {
+				parsedResult.files.forEach(function(item) {
+					var normalizedPath = decodeURIComponent(item.path
+											.replace(conf.target, "")
+											.replace(/^\//, "")
+										);
+
+					modifiedMap[normalizedPath] = new Date(item.mod);
+				});
+			}
+
+			if (parsedResult.collections) {
+				var normalizedCollections = parsedResult.collections.map(function(collection){
+					return decodeURIComponent(collection.replace(/\/\//g, "/"));
+				});
+			}
+
+			callback(null, modifiedMap, normalizedCollections);
 		});
 	};
 
@@ -171,20 +193,16 @@ module.exports = function(options) {
 			firstFile = file;
 
 			async.series([
-				function(callback) {
-					gutil.log('Creating target collection "' + conf.target + '"...');
-					client.methodCall('createCollection', [conf.target], callback);
-				},
-				function(callback) {
-					if (!conf.changed_only) {
-						callback(null); return;
-					} 
-					
-					gutil.log('Retrieving modification dates from server...');
-					getLastModified(conf.target, function(error, result) {
-						lastModifiedMap = result;
+				function(callback) {					
+					gutil.log('Retrieving list of existing resources...');
+					getCollectionInfo(conf.target, function(error, mtimes, collections) {
+						lastModifiedMap = mtimes || {};
+						existingCollections = collections || [];
 						callback(error);
 					});
+				}, 
+				function(callback) {
+					createCollectionIfNotExistent(conf.target, callback);
 				}
 			], function(error) {
 				if (error) 
