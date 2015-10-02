@@ -1,6 +1,6 @@
 {
   "name": "gulp-exist",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Upload files to eXist-db",
   "main": "index.js",
   "scripts": {
