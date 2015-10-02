@@ -183,7 +183,7 @@ module.exports = function(options) {
 					gutil.log('Retrieving modification dates from server...');
 					getLastModified(conf.target, function(error, result) {
 						lastModifiedMap = result;
-						callback();
+						callback(error);
 					});
 				}
 			], function(error) {
