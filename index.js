@@ -9,6 +9,7 @@ var fs = require("fs");
 
 
 var lastModifiedXQL = (function () {/*  
+	declare namespace json="http://www.json.org";
 	declare option exist:serialize "method=json media-type=text/javascript";
 	declare function local:ls($collection as xs:string) as element()* {
 	      for $child in xmldb:get-child-collections($collection)
@@ -20,7 +21,7 @@ var lastModifiedXQL = (function () {/*
 	            let $path := concat($collection, '/', $child)
 	            order by $child 
 	            return
-	                <files path="{$path}" mod="{xmldb:last-modified($collection, $child)}"/>
+	                <files json:array="true" path="{$path}" mod="{xmldb:last-modified($collection, $child)}"/>
 	};       
 */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1];
 
@@ -117,11 +118,11 @@ module.exports = function(options) {
 				callback(error); return;
 			}
 
-			var resultJson = result.replace(/(<([^>]+)>)/ig,"");
-			if (resultJson.replace(/\s/g, "") == "null") {
+			var resultJson = result.replace(/(<([^>]+)>)/ig,"").replace(/\s/g, "");
+			if (resultJson == "null") {
 				callback(null, {files: []}); return;
 			}
-
+			
 			var map = {};
 			JSON.parse(resultJson).files.forEach(function(item) {
 				var normalizedPath = decodeURIComponent(item.path
