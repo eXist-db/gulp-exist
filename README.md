@@ -24,7 +24,7 @@ gulp.task('deploy-local', function() {
 			changed_only: true,
 			permissions: {
 				"controller.xql": "rwxr-xr-x"
-			}
+			},
  			post_install: "post-install.xql"
 		}));
 });
