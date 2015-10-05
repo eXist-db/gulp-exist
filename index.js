@@ -49,22 +49,23 @@ module.exports = function(options) {
 	});
 
 	var conf = {
-		target: (function(){
-			if (!options.hasOwnProperty("target")) {
-				return "/"
-			} else {
-				return /\/$/.test(options.target) ? options.target : options.target + "/";
-			}
-		})(),
-		create_collection: options.hasOwnProperty("create_collection")? options.create_collection : true,
-		changed_only: options.hasOwnProperty("changed_only") && options.changed_only,
-		post_install: options.post_install,
-		permissions: options.permissions || {}
+		target: 				(function(){
+									if (!options.hasOwnProperty("target")) {
+										return "/"
+									} else {
+										return /\/$/.test(options.target) ? options.target : options.target + "/";
+									}
+								})(),
+		create_collection: 		options.hasOwnProperty("create_collection")? options.create_collection : true,
+		changed_only: 			options.hasOwnProperty("changed_only") && options.changed_only,
+		skip_info_retrieval: 	options.hasOwnProperty("skip_info_retrieval") && options.skip_info_retrieval,
+		post_install: 			options.post_install,
+		permissions: 			options.permissions || {}
 	};
 
 
-	var lastModifiedMap = null;
-	var existingCollections = null;
+	var lastModifiedMap = {};
+	var existingCollections = [];
 	var firstFile = null;
 
 	function createCollectionIfNotExistent(collection, callback) {
@@ -193,13 +194,17 @@ module.exports = function(options) {
 			firstFile = file;
 
 			async.series([
-				function(callback) {					
-					gutil.log('Retrieving list of existing resources...');
-					getCollectionInfo(conf.target, function(error, mtimes, collections) {
-						lastModifiedMap = mtimes || {};
-						existingCollections = collections || [];
-						callback(error);
-					});
+				function(callback) {
+					if (!conf.skip_info_retrieval)	{			
+						gutil.log('Retrieving list of existing resources...');
+						getCollectionInfo(conf.target, function(error, mtimes, collections) {
+							lastModifiedMap = mtimes || {};
+							existingCollections = collections || [];
+							callback(error);
+						});	
+					} else {
+						callback(null);
+					}
 				}, 
 				function(callback) {
 					createCollectionIfNotExistent(conf.target, callback);
