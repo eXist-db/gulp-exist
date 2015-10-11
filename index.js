@@ -12,15 +12,12 @@ var lastModifiedXQL = (function () {/*
 	declare namespace json="http://www.json.org";
 	declare option exist:serialize "method=json media-type=text/javascript";
 	declare function local:ls($collection as xs:string) as element()* {
-		  <collections json:array="true">{$collection}</collections>,
 	      for $child in xmldb:get-child-collections($collection)
 	      let $path := concat($collection, '/', $child)
-	      order by $child 
 	      return
 	          local:ls($path),
 	           for $child in xmldb:get-child-resources($collection)
 	            let $path := concat($collection, '/', $child)
-	            order by $child 
 	            return
 	                <files json:array="true" path="{$path}" mod="{xmldb:last-modified($collection, $child)}"/>
 	};       
@@ -58,7 +55,6 @@ module.exports = function(options) {
 								})(),
 		create_collection: 		options.hasOwnProperty("create_collection")? options.create_collection : true,
 		changed_only: 			options.hasOwnProperty("changed_only") && options.changed_only,
-		skip_info_retrieval: 	options.hasOwnProperty("skip_info_retrieval") && options.skip_info_retrieval,
 		post_install: 			options.post_install,
 		permissions: 			options.permissions || {}
 	};
@@ -69,12 +65,15 @@ module.exports = function(options) {
 	var firstFile = null;
 
 	function createCollectionIfNotExistent(collection, callback) {
-		if (existingCollections.indexOf(collection) > -1) {
-			callback(); return;
-		}
-
-		gutil.log('Creating collection "' + collection + '"...');
-		client.methodCall('createCollection', [collection], callback);
+		
+		client.methodCall('describeCollection', [collection], function(error, result) {
+			if (error) {
+				gutil.log('Creating collection "' + collection + '"...');
+				client.methodCall('createCollection', [collection], callback);
+			} else {
+				callback();
+			}
+		});
 	}
 
 	var storeFile = function(file, enc, callback) {
@@ -195,7 +194,7 @@ module.exports = function(options) {
 
 			async.series([
 				function(callback) {
-					if (!conf.skip_info_retrieval)	{			
+					if (conf.changed_only)	{			
 						gutil.log('Retrieving list of existing resources...');
 						getCollectionInfo(conf.target, function(error, mtimes, collections) {
 							lastModifiedMap = mtimes || {};
