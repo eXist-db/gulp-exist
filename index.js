@@ -108,8 +108,12 @@ module.exports = function(options) {
 			client.methodCall('upload', [file.contents, file.contents.length], callback);
 		}
 
+		var normalizePath = function(path) {
+			return /^win/.test(process.platform) ? path.replace(/\\/g,"/") : path;
+		}
+
 		var parseFile = function(fileHandle, callback) {
-			client.methodCall('parseLocal', [fileHandle, conf.target + file.relative, true, mime], callback);
+			client.methodCall('parseLocal', [fileHandle, normalizePath(conf.target + file.relative), true, mime], callback);
 		}
 
 		var setPermissions = function(result, callback) {
@@ -126,7 +130,7 @@ module.exports = function(options) {
 			callback(null);
 		};
 
-		gutil.log('Storing "' + file.path + '" (' + mime + ')...');
+		gutil.log('Storing "' + normalizePath(conf.target + file.relative) + '" (' + mime + ')...');
 		async.waterfall([
 			uploadFile,
 			parseFile,
