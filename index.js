@@ -64,12 +64,18 @@ module.exports = function(options) {
 	var existingCollections = [];
 	var firstFile = null;
 
+	var normalizePath = function(path) {
+		return /^win/.test(process.platform) ? path.replace(/\\/g,"/") : path;
+	}
+
 	function createCollectionIfNotExistent(collection, callback) {
 		
-		client.methodCall('describeCollection', [collection], function(error, result) {
+		var normalizedCollectionPath = normalizePath(collection);
+
+		client.methodCall('describeCollection', [normalizedCollectionPath], function(error, result) {
 			if (error) {
-				gutil.log('Creating collection "' + collection + '"...');
-				client.methodCall('createCollection', [collection], callback);
+				gutil.log('Creating collection "' + normalizedCollectionPath + '"...');
+				client.methodCall('createCollection', [normalizedCollectionPath], callback);
 			} else {
 				callback();
 			}
@@ -106,10 +112,6 @@ module.exports = function(options) {
 
 		var uploadFile = function(callback){
 			client.methodCall('upload', [file.contents, file.contents.length], callback);
-		}
-
-		var normalizePath = function(path) {
-			return /^win/.test(process.platform) ? path.replace(/\\/g,"/") : path;
 		}
 
 		var parseFile = function(fileHandle, callback) {
