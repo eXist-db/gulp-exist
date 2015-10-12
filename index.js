@@ -106,6 +106,8 @@ module.exports = function(options) {
 			var ext = file.path.substring(file.path.lastIndexOf("."));
 			if (ext == ".xq" || ext == ".xql" || ext == ".xqm") 
 				return "application/xquery";
+			else if (ext == ".xconf")
+				return "application/xml";
 			else 
 				return Mime.lookup(file.path);
 		})();
