@@ -23,26 +23,14 @@ var lastModifiedXQL = (function () {/*
 	};       
 */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1];
 
-
-module.exports.dest = function(options) {
-
-	var self = null;
-
-	var existError = function(error) {
-		throw new PluginError("gulp-exist", error);
-	};
-	 if(!options) {
-	 	throw new PluginError("gulp-exist", "Missing options.");
-	 }
-
-	var client = xmlrpc.createClient({
-		host: options.hasOwnProperty("host")? options.host : 'localhost',
-		port: options.hasOwnProperty("port")? options.port : '8080', 
-		path: options.hasOwnProperty("path")? options.path : '/exist/xmlrpc',
-		basic_auth: options.hasOwnProperty("auth")? {user: options.auth.username, pass: options.auth.password} : { user: "guest", pass: "guest"}
-	});
-
-	var conf = {
+var getConfig = function(options) {
+	return {
+		rpc_conf: {
+			host: options.hasOwnProperty("host")? options.host : 'localhost',
+			port: options.hasOwnProperty("port")? options.port : '8080', 
+			path: options.hasOwnProperty("path")? options.path : '/exist/xmlrpc',
+			basic_auth: options.hasOwnProperty("auth")? {user: options.auth.username, pass: options.auth.password} : { user: "guest", pass: "guest"}
+		},
 		target: 				(function(){
 									if (!options.hasOwnProperty("target")) {
 										return "/"
@@ -55,6 +43,22 @@ module.exports.dest = function(options) {
 		post_install: 			options.post_install,
 		permissions: 			options.permissions || {}
 	};
+}
+
+module.exports.dest = function(options) {
+
+	var self = null;
+
+	var existError = function(error) {
+		throw new PluginError("gulp-exist", error);
+	};
+	 if(!options) {
+	 	throw new PluginError("gulp-exist", "Missing options.");
+	 }
+
+	conf = getConfig(options);
+
+	var client = xmlrpc.createClient(conf.rpc_conf);
 
 
 	var lastModifiedMap = {};
