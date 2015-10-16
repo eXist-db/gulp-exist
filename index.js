@@ -40,8 +40,9 @@ var getConfig = function(options) {
 								})(),
 		create_collection: 		options.hasOwnProperty("create_collection")? options.create_collection : true,
 		changed_only: 			options.hasOwnProperty("changed_only") && options.changed_only,
-		post_install: 			options.post_install,
-		permissions: 			options.permissions || {}
+		permissions: 			options.permissions || {},
+		print_xql_results: 		options.hasOwnProperty("print_xql_results")? options.print_xql_results : true,
+		xql_output_ext:         options.hasOwnProperty("xql_output_ext")? options.xql_output_ext : "xml"
 	};
 }
 
@@ -56,8 +57,7 @@ module.exports.dest = function(options) {
 	 	throw new PluginError("gulp-exist", "Missing options.");
 	 }
 
-	conf = getConfig(options);
-
+	var conf = getConfig(options);
 	var client = xmlrpc.createClient(conf.rpc_conf);
 
 
@@ -185,17 +185,6 @@ module.exports.dest = function(options) {
 		});
 	};
 
-	function executeXqlFromFile(path, callback) {
-		async.waterfall([
-			function(callback) {
-				fs.readFile(path, callback);
-			},
-			function(contents, callback) {
-				client.methodCall('executeQuery', [contents, {}], callback)
-			}
-		], callback);
-	}
-
 	function handleFile(file, enc, callback) {
 
 		if (!firstFile) {
@@ -230,18 +219,66 @@ module.exports.dest = function(options) {
 		storeFile(file, enc, function() {callback(null, file)});
 	}
 
+	return through.obj(handleFile);
+}
 
-	function endStream(done) {
 
-		if (conf.post_install) {
-			gutil.log('Running post-install script on server: ' + conf.post_install);
-			executeXqlFromFile(conf.post_install, done);
-			return;
+module.exports.query = function(options) {
+
+	var conf = getConfig(options);
+	var client = xmlrpc.createClient(conf.rpc_conf);
+
+	function executeQuery(file, enc, callback) {
+
+		if (file.isStream()) {
+			callback(); return this.emit("error", new PluginError("gulp-exist",  "Streaming not supported"));
 		}
-		
 
-		done(null);
+		if (file.isDirectory() || file.isNull()) {
+			callback(); return;
+		}
+
+		var self = this;
+
+
+		gutil.log('Running XQuery on server: ' + file.relative);
+
+		async.waterfall([
+			function(callback) {
+				fs.readFile(file.path, callback);
+			},
+			function(contents, callback) {
+				client.methodCall('executeQuery', [contents, {}], callback);
+			},
+			function(resultHandle, callback) {
+				client.methodCall('getHits', [resultHandle], function(error, hitCount) {
+					callback(error, resultHandle, hitCount);
+				});
+			},
+			function(resultHandle, hitCount, callback) {
+				async.times(hitCount, function(n, next) {
+					client.methodCall('retrieve', [resultHandle, n, {}], next);
+				}, callback);
+			} 
+		], function(error, results) {
+			if (error) {
+				self.emit("error", new PluginError("gulp-exist", "Error running XQuery " + file.relative + ":\n" + error));
+				callback(); return;
+			}
+
+			var  result = Buffer.concat(results); 
+
+			if (conf.print_xql_results) {
+				gutil.log(result.toString());
+			}
+
+			file.path = gutil.replaceExtension(file.path, "." + new Date().toJSON() + "." + conf.xql_output_ext);
+			file.contents = result;
+
+			callback(null, file);
+		});
 	}
 
-	return through.obj(handleFile, endStream);
+	return through.obj(executeQuery);
+
 }
