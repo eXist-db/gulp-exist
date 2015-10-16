@@ -221,13 +221,13 @@ module.exports.dest = function(options) {
 				if (error) 
 					callback(error);
 
-				storeFile(file, enc, callback);
+				storeFile(file, enc, function() {callback(null, file)});
 			});
 			
 			return;
 		}
 			
-		storeFile(file, enc, callback);
+		storeFile(file, enc, function() {callback(null, file)});
 	}
 
 
