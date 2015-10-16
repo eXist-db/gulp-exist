@@ -39,10 +39,7 @@ module.exports = function(options) {
 		host: options.hasOwnProperty("host")? options.host : 'localhost',
 		port: options.hasOwnProperty("port")? options.port : '8080', 
 		path: options.hasOwnProperty("path")? options.path : '/exist/xmlrpc',
-		basic_auth: {
-			user: options.hasOwnProperty("username")? options.username : "guest",
-			pass: options.hasOwnProperty("password")? options.password : "guest"
-		}
+		basic_auth: options.hasOwnProperty("auth")? {user: options.auth.username, pass: options.auth.password} : { user: "guest", pass: "guest"}
 	});
 
 	var conf = {
