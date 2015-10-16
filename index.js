@@ -86,6 +86,7 @@ module.exports.dest = function(options) {
 		})();
 
 		var setPermissions = function(result, callback) {
+			if (conf.permissions.hasOwnProperty(file.relative)) {
 				gutil.log('Setting permissions for "' + normalizePath(file.relative) + '" (' + conf.permissions[file.relative] + ')...');
 				client.methodCall(
 					'setPermissions',
@@ -97,7 +98,9 @@ module.exports.dest = function(options) {
 			callback(null);
 		};
 
-		gutil.log('Storing "' + normalizePath(conf.target + file.relative) + '" (' + mime + ')...');
+		var remotePath = normalizePath(conf.target + file.relative);
+
+		gutil.log('Storing "' + remotePath + '" (' + mime + ')...');
 		async.waterfall([
 
 			// First upload file
@@ -107,7 +110,7 @@ module.exports.dest = function(options) {
 
 			// Then parse file on server and store to specified destination path
 			function(fileHandle, callback) {
-				client.methodCall('parseLocal', [fileHandle, normalizePath(conf.target + file.relative), true, mime], callback);
+				client.methodCall('parseLocal', [fileHandle, remotePath, true, mime], callback);
 			},
 			// Then override permissions if specified in options
 			function(result, callback) {
@@ -115,7 +118,7 @@ module.exports.dest = function(options) {
 					gutil.log('Setting permissions for "' + normalizePath(file.relative) + '" (' + conf.permissions[file.relative] + ')...');
 					return client.methodCall(
 						'setPermissions',
-						[normalizePath(conf.target + file.relative), conf.permissions[file.relative]],
+						[remotePath, conf.permissions[file.relative]],
 						callback
 					);
 				}
@@ -123,8 +126,21 @@ module.exports.dest = function(options) {
 				callback(null);
 			}
 
-		// Finally proceed to next file	
-		], callback);	
+		// Handle errors and proceed to next file	
+		], function(error) {
+			if (error) {
+				if (/SAXParseException/.test(error.faultString)) {
+
+					// Delete file on server on parse error. This is necessary because eXist modifies the 
+					// mtimes of existing files on a failed upload/parse-attempt which breaks 
+					// date comparisons in the newer-stream
+					gutil.log("Removing " + remotePath + " due to parse error...");
+					return client.methodCall('remove', [remotePath], function() { callback(error)});
+				}
+				return callback(error);
+			}
+			callback();
+		});	
 	};
 
 	return through.obj(storeFile);
