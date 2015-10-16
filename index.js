@@ -103,8 +103,27 @@ module.exports.dest = function(options) {
 		gutil.log('Storing "' + remotePath + '" (' + mime + ')...');
 		async.waterfall([
 
-			// First upload file
-			function(callback){
+			// If this is the first file in the stream, check if the target collection exists
+			function(callback) {
+				if (firstFile == null) {
+					firstFile = file;
+					client.methodCall('describeCollection', [conf.target], function(error) { callback(null, (error == null)) });
+				} else {
+					callback(null, true);
+				}
+			},
+
+			// Then create target collection if needed
+			function(skip, callback) {
+				if (!skip) {
+					createCollection(client, conf.target, callback);
+				} else {
+					callback(null, null);
+				}
+			},
+
+			// Then upload file
+			function(result, callback){
 				client.methodCall('upload', [file.contents, file.contents.length], callback);
 			},
 
