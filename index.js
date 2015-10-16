@@ -22,6 +22,7 @@ var getConfig = function(options) {
 									}
 								})(),
 		permissions: 			options.permissions || {},
+		mime_types: 			options.mime_types || {},
 		print_xql_results: 		options.hasOwnProperty("print_xql_results")? options.print_xql_results : true,
 		xql_output_ext:         options.hasOwnProperty("xql_output_ext")? options.xql_output_ext : "xml"
 	};
@@ -72,6 +73,10 @@ module.exports.dest = function(options) {
 
 		var mime = (function() {
 			var ext = file.path.substring(file.path.lastIndexOf("."));
+			if (conf.mime_types.hasOwnProperty(ext))
+				return conf.mime_types[ext];
+			else if (conf.mime_types.hasOwnProperty(file.relative))
+				return conf.mime_types[file.relative];
 			if (ext == ".xq" || ext == ".xql" || ext == ".xqm") 
 				return "application/xquery";
 			else if (ext == ".xconf")
@@ -81,7 +86,6 @@ module.exports.dest = function(options) {
 		})();
 
 		var setPermissions = function(result, callback) {
-			if (conf.permissions && conf.permissions[file.relative]) {
 				gutil.log('Setting permissions for "' + normalizePath(file.relative) + '" (' + conf.permissions[file.relative] + ')...');
 				client.methodCall(
 					'setPermissions',
