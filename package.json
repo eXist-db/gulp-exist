@@ -1,6 +1,6 @@
 {
   "name": "gulp-exist",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "Upload files to eXist-db",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,8 @@
     "xquery",
     "exist",
     "exist-db",
-    "xql"
+    "xql",
+    "xml"
   ],
   "author": "Marcel Schaeben",
   "license": "MIT",
