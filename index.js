@@ -119,10 +119,10 @@ module.exports = function(options) {
 
 		var setPermissions = function(result, callback) {
 			if (conf.permissions && conf.permissions[file.relative]) {
-				gutil.log('Setting permissions for "' + file.relative + '" (' + conf.permissions[file.relative] + ')...');
+				gutil.log('Setting permissions for "' + normalizePath(file.relative) + '" (' + conf.permissions[file.relative] + ')...');
 				client.methodCall(
 					'setPermissions',
-					[conf.target + file.relative, conf.permissions[file.relative]],
+					[normalizePath(conf.target + file.relative), conf.permissions[file.relative]],
 					callback
 				);
 				return;
