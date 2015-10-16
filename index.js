@@ -24,7 +24,7 @@ var lastModifiedXQL = (function () {/*
 */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1];
 
 
-module.exports = function(options) {
+module.exports.dest = function(options) {
 
 	var self = null;
 
