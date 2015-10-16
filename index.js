@@ -5,7 +5,6 @@ var File = gutil.File;
 var xmlrpc = require("xmlrpc");
 var Mime = require("mime");
 var async = require("async");
-var fs = require("fs");
 
 var getConfig = function(options) {
 	return {
@@ -207,22 +206,15 @@ module.exports.newer = function(options) {
 			return;
 		}
 
-		async.waterfall([
-			function(callback) {
-				client.methodCall('describeResource', [normalizePath(conf.target + file.relative)], callback);
-			}, 
-			function(resourceInfo, callback) {
-				fs.stat(file.path, function(error, localStats) { callback(error, resourceInfo, localStats); });
-			}
-
-		], function(error, resourceInfo, localStats) {
+		client.methodCall('describeResource', [normalizePath(conf.target + file.relative)], function(error, resourceInfo) {
 			if (error) {
 				return self.emit("error", new PluginError("gulp-exist", "Error on checking file " + file.relative + ":\n" + error));
 			}
-			// console.log(resourceInfo);
-			var newer = !resourceInfo.hasOwnProperty("modified") || (Date.parse(localStats.mtime) > Date.parse(resourceInfo.modified));
+
+			var newer = !resourceInfo.hasOwnProperty("modified") || (Date.parse(file.stat.mtime) > Date.parse(resourceInfo.modified));
 			callback(error, newer ? file : null);
 		});
+
 	}
 
 	return through.obj(checkFile);
