@@ -7,22 +7,6 @@ var Mime = require("mime");
 var async = require("async");
 var fs = require("fs");
 
-
-var lastModifiedXQL = (function () {/*  
-	declare namespace json="http://www.json.org";
-	declare option exist:serialize "method=json media-type=text/javascript";
-	declare function local:ls($collection as xs:string) as element()* {
-	      for $child in xmldb:get-child-collections($collection)
-	      let $path := concat($collection, '/', $child)
-	      return
-	          local:ls($path),
-	           for $child in xmldb:get-child-resources($collection)
-	            let $path := concat($collection, '/', $child)
-	            return
-	                <files json:array="true" path="{$path}" mod="{xmldb:last-modified($collection, $child)}"/>
-	};       
-*/}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1];
-
 var getConfig = function(options) {
 	return {
 		rpc_conf: {
@@ -38,13 +22,25 @@ var getConfig = function(options) {
 										return /\/$/.test(options.target) ? options.target : options.target + "/";
 									}
 								})(),
-		create_collection: 		options.hasOwnProperty("create_collection")? options.create_collection : true,
-		changed_only: 			options.hasOwnProperty("changed_only") && options.changed_only,
 		permissions: 			options.permissions || {},
 		print_xql_results: 		options.hasOwnProperty("print_xql_results")? options.print_xql_results : true,
 		xql_output_ext:         options.hasOwnProperty("xql_output_ext")? options.xql_output_ext : "xml"
 	};
 }
+
+var normalizePath = function(path) {
+	
+	return /^win/.test(process.platform) ? path.replace(/\\/g,"/") : path;
+}
+
+function createCollection(client, collection, callback) {
+	
+	var normalizedCollectionPath = normalizePath(collection);
+
+	gutil.log('Creating collection "' + normalizedCollectionPath + '"...');
+	client.methodCall('createCollection', [normalizedCollectionPath], callback);
+}
+
 
 module.exports.dest = function(options) {
 
@@ -60,28 +56,7 @@ module.exports.dest = function(options) {
 	var conf = getConfig(options);
 	var client = xmlrpc.createClient(conf.rpc_conf);
 
-
-	var lastModifiedMap = {};
-	var existingCollections = [];
 	var firstFile = null;
-
-	var normalizePath = function(path) {
-		return /^win/.test(process.platform) ? path.replace(/\\/g,"/") : path;
-	}
-
-	function createCollectionIfNotExistent(collection, callback) {
-		
-		var normalizedCollectionPath = normalizePath(collection);
-
-		client.methodCall('describeCollection', [normalizedCollectionPath], function(error, result) {
-			if (error) {
-				gutil.log('Creating collection "' + normalizedCollectionPath + '"...');
-				client.methodCall('createCollection', [normalizedCollectionPath], callback);
-			} else {
-				callback();
-			}
-		});
-	}
 
 	var storeFile = function(file, enc, callback) {
 		if (file.isStream()) {
@@ -89,19 +64,12 @@ module.exports.dest = function(options) {
 		}
 
 		if (file.isDirectory()) {
-			createCollectionIfNotExistent(conf.target  + file.relative, callback);
-			return;
+			return createCollection(client, normalizePath(conf.target  + file.relative), callback);
 		}
 
 		if (file.isNull()) {
-			callback(); return;
+			return callback();
 		}
-
-		if (conf.changed_only
-			&& lastModifiedMap[file.relative] >= fs.statSync(file.path).mtime) {
-			callback(); return;
-		}
-
 
 		var mime = (function() {
 			var ext = file.path.substring(file.path.lastIndexOf("."));
@@ -113,14 +81,6 @@ module.exports.dest = function(options) {
 				return Mime.lookup(file.path);
 		})();
 
-		var uploadFile = function(callback){
-			client.methodCall('upload', [file.contents, file.contents.length], callback);
-		}
-
-		var parseFile = function(fileHandle, callback) {
-			client.methodCall('parseLocal', [fileHandle, normalizePath(conf.target + file.relative), true, mime], callback);
-		}
-
 		var setPermissions = function(result, callback) {
 			if (conf.permissions && conf.permissions[file.relative]) {
 				gutil.log('Setting permissions for "' + normalizePath(file.relative) + '" (' + conf.permissions[file.relative] + ')...');
@@ -131,95 +91,40 @@ module.exports.dest = function(options) {
 				);
 				return;
 			}
-
 			callback(null);
 		};
 
 		gutil.log('Storing "' + normalizePath(conf.target + file.relative) + '" (' + mime + ')...');
 		async.waterfall([
-			uploadFile,
-			parseFile,
-			setPermissions
+
+			// First upload file
+			function(callback){
+				client.methodCall('upload', [file.contents, file.contents.length], callback);
+			},
+
+			// Then parse file on server and store to specified destination path
+			function(fileHandle, callback) {
+				client.methodCall('parseLocal', [fileHandle, normalizePath(conf.target + file.relative), true, mime], callback);
+			},
+			// Then override permissions if specified in options
+			function(result, callback) {
+				if (conf.permissions && conf.permissions[file.relative]) {
+					gutil.log('Setting permissions for "' + normalizePath(file.relative) + '" (' + conf.permissions[file.relative] + ')...');
+					return client.methodCall(
+						'setPermissions',
+						[normalizePath(conf.target + file.relative), conf.permissions[file.relative]],
+						callback
+					);
+				}
+
+				callback(null);
+			}
+
+		// Finally proceed to next file	
 		], callback);	
 	};
 
-	function getCollectionInfo(target, callback) {
-		var xql = lastModifiedXQL + ' 							\
-				if (xmldb:collection-available("' + target + '")) then \
-					<result>{local:ls("' + target + '")}</result> 			\
-				else ()									\
-		';
-
-		client.methodCall('query', [xql, 1, 1, {}], function(error, result) {
-			if (error) {
-				callback(error); return;
-			}
-
-			var resultJson = result.replace(/(<([^>]+)>)/ig,"").replace(/\s/g, "");
-			if (resultJson == "" || resultJson == "null") {
-				callback();
-				return;
-			}
-
-			var parsedResult = JSON.parse(resultJson);
-
-			var modifiedMap = {};
-			if (parsedResult.files) {
-				parsedResult.files.forEach(function(item) {
-					var normalizedPath = decodeURIComponent(item.path
-											.replace(conf.target, "")
-											.replace(/^\//, "")
-										);
-
-					modifiedMap[normalizedPath] = new Date(item.mod);
-				});
-			}
-
-			if (parsedResult.collections) {
-				var normalizedCollections = parsedResult.collections.map(function(collection){
-					return decodeURIComponent(collection.replace(/\/\//g, "/"));
-				});
-			}
-
-			callback(null, modifiedMap, normalizedCollections);
-		});
-	};
-
-	function handleFile(file, enc, callback) {
-
-		if (!firstFile) {
-			firstFile = file;
-
-			async.series([
-				function(callback) {
-					if (conf.changed_only)	{			
-						gutil.log('Retrieving list of existing resources...');
-						getCollectionInfo(conf.target, function(error, mtimes, collections) {
-							lastModifiedMap = mtimes || {};
-							existingCollections = collections || [];
-							callback(error);
-						});	
-					} else {
-						callback(null);
-					}
-				}, 
-				function(callback) {
-					createCollectionIfNotExistent(conf.target, callback);
-				}
-			], function(error) {
-				if (error) 
-					callback(error);
-
-				storeFile(file, enc, function() {callback(null, file)});
-			});
-			
-			return;
-		}
-			
-		storeFile(file, enc, function() {callback(null, file)});
-	}
-
-	return through.obj(handleFile);
+	return through.obj(storeFile);
 }
 
 
@@ -280,5 +185,46 @@ module.exports.query = function(options) {
 	}
 
 	return through.obj(executeQuery);
+}
+
+
+module.exports.newer = function(options) {
+
+	var conf = getConfig(options);
+	var client = xmlrpc.createClient(conf.rpc_conf);
+
+	function checkFile(file, enc, callback) {
+
+		var self = this;
+
+		if (file.isDirectory()) {
+			var collection = normalizePath(conf.target + file.relative);
+			client.methodCall('describeCollection', [collection], function(error, result) {
+
+				// Include directory if it does not exist as a collection on a server
+				callback(null, result ? null : file);
+			});
+			return;
+		}
+
+		async.waterfall([
+			function(callback) {
+				client.methodCall('describeResource', [normalizePath(conf.target + file.relative)], callback);
+			}, 
+			function(resourceInfo, callback) {
+				fs.stat(file.path, function(error, localStats) { callback(error, resourceInfo, localStats); });
+			}
+
+		], function(error, resourceInfo, localStats) {
+			if (error) {
+				return self.emit("error", new PluginError("gulp-exist", "Error on checking file " + file.relative + ":\n" + error));
+			}
+			// console.log(resourceInfo);
+			var newer = !resourceInfo.hasOwnProperty("modified") || (Date.parse(localStats.mtime) > Date.parse(resourceInfo.modified));
+			callback(error, newer ? file : null);
+		});
+	}
+
+	return through.obj(checkFile);
 
 }
