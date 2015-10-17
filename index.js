@@ -106,7 +106,6 @@ module.exports.dest = function(options) {
 		};
 
 
-		gutil.log('Storing "' + remotePath + '" (' + mime + ')...');
 		async.waterfall([
 
 			// If this is the first file in the stream, check if the target collection exists
