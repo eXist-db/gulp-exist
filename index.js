@@ -24,7 +24,8 @@ var getConfig = function(options) {
 		permissions: 			options.permissions || {},
 		mime_types: 			options.mime_types || {},
 		print_xql_results: 		options.hasOwnProperty("print_xql_results")? options.print_xql_results : true,
-		xql_output_ext:         options.hasOwnProperty("xql_output_ext")? options.xql_output_ext : "xml"
+		xql_output_ext:         options.hasOwnProperty("xql_output_ext")? options.xql_output_ext : "xml",
+		binary_fallback:        options.hasOwnProperty("binary_fallback")? options.binary_fallback : false
 	};
 }
 
@@ -87,6 +88,24 @@ module.exports.dest = function(options) {
 
 		var remotePath = normalizePath(conf.target + file.relative);
 
+		var uploadAndParse = function(file, remotePath, mime, callback) {
+			async.waterfall([
+
+				// First upload file
+				function(callback){
+					gutil.log('Storing "' + remotePath + '" (' + mime + ')...');
+					
+					client.methodCall('upload', [file.contents, file.contents.length], callback);
+				},
+
+				// Then parse file on server and store to specified destination path
+				function(fileHandle, callback) {
+					client.methodCall('parseLocal', [fileHandle, remotePath, true, mime], callback);
+				},
+			], callback);
+		};
+
+
 		gutil.log('Storing "' + remotePath + '" (' + mime + ')...');
 		async.waterfall([
 
@@ -109,15 +128,20 @@ module.exports.dest = function(options) {
 				}
 			},
 
-			// Then upload file
-			function(result, callback){
-				client.methodCall('upload', [file.contents, file.contents.length], callback);
-			},
+			// Then upload and parse file
+			function(result, callback) {
+				uploadAndParse(file, remotePath, mime, function(error, result) {
+					if (error && conf.binary_fallback) {
+						if (/SAXParseException/.test(error.faultString)) {
+							gutil.log(file.relative + " not well-formed XML, trying to store as binary...");
+							return uploadAndParse(file, remotePath, "application/octet-stream", callback);
+						}
+					}
 
-			// Then parse file on server and store to specified destination path
-			function(fileHandle, callback) {
-				client.methodCall('parseLocal', [fileHandle, remotePath, true, mime], callback);
+					callback(error, result);
+				});
 			},
+		
 			// Then override permissions if specified in options
 			function(result, callback) {
 				if (conf.permissions && conf.permissions[file.relative]) {
