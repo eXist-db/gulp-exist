@@ -85,19 +85,6 @@ module.exports.dest = function(options) {
 				return Mime.lookup(file.path);
 		})();
 
-		var setPermissions = function(result, callback) {
-			if (conf.permissions.hasOwnProperty(file.relative)) {
-				gutil.log('Setting permissions for "' + normalizePath(file.relative) + '" (' + conf.permissions[file.relative] + ')...');
-				client.methodCall(
-					'setPermissions',
-					[normalizePath(conf.target + file.relative), conf.permissions[file.relative]],
-					callback
-				);
-				return;
-			}
-			callback(null);
-		};
-
 		var remotePath = normalizePath(conf.target + file.relative);
 
 		gutil.log('Storing "' + remotePath + '" (' + mime + ')...');
