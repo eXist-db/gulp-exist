@@ -198,10 +198,7 @@ module.exports.query = function(options) {
 
 		async.waterfall([
 			function(callback) {
-				fs.readFile(file.path, callback);
-			},
-			function(contents, callback) {
-				client.methodCall('executeQuery', [contents, {}], callback);
+				client.methodCall('executeQuery', [file.contents, {}], callback);
 			},
 			function(resultHandle, callback) {
 				client.methodCall('getHits', [resultHandle], function(error, hitCount) {
