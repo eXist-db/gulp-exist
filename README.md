@@ -91,7 +91,7 @@ var exist_config = {
 	port: '8080',
 	auth: { username: 'admin', pass: '' },
 	path: '/exist/xmlrpc',
-	target: '/db/apps/myapp',
+	target: '/db/system/config/db/apps/myapp/data',
 	xql_output_ext: 'json'
 };
 
