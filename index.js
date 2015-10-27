@@ -6,7 +6,13 @@ var xmlrpc = require("xmlrpc");
 var Mime = require("mime");
 var async = require("async");
 
-var getConfig = function(options) {
+var getConfig = function(targetOrOptions, options) {
+
+	console.log(targetOrOptions);
+	if (typeof targetOrOptions === "object") {
+		options = targetOrOptions;
+	}
+
 	return {
 		rpc_conf: {
 			host: options.hasOwnProperty("host")? options.host : 'localhost',
@@ -15,11 +21,17 @@ var getConfig = function(options) {
 			basic_auth: options.hasOwnProperty("auth")? {user: options.auth.username, pass: options.auth.password} : { user: "guest", pass: "guest"}
 		},
 		target: 				(function(){
-									if (!options.hasOwnProperty("target")) {
-										return "/"
+									var target = null;
+
+									if (typeof targetOrOptions === "string") {
+										target = targetOrOptions
+									} else if (options.hasOwnProperty("target")) {
+										target = options.target;
 									} else {
-										return /\/$/.test(options.target) ? options.target : options.target + "/";
+										target = "";
 									}
+
+									return /\/$/.test(target) ? target : target + "/";
 								})(),
 		permissions: 			options.permissions || {},
 		mime_types: 			options.mime_types || {},
@@ -43,18 +55,18 @@ function createCollection(client, collection, callback) {
 }
 
 
-module.exports.dest = function(options) {
+module.exports.dest = function(targetOrOptions, options) {
 
 	var self = null;
 
 	var existError = function(error) {
 		throw new PluginError("gulp-exist", error);
 	};
-	 if(!options) {
+	 if(typeof targetOrOptions !== "object" && !options) {
 	 	throw new PluginError("gulp-exist", "Missing options.");
 	 }
 
-	var conf = getConfig(options);
+	var conf = getConfig(targetOrOptions, options);
 	var client = xmlrpc.createClient(conf.rpc_conf);
 
 	var firstFile = null;
@@ -178,7 +190,7 @@ module.exports.dest = function(options) {
 
 module.exports.query = function(options) {
 
-	var conf = getConfig(options);
+	var conf = getConfig(void 0, options);
 	var client = xmlrpc.createClient(conf.rpc_conf);
 
 	function executeQuery(file, enc, callback) {
@@ -233,9 +245,9 @@ module.exports.query = function(options) {
 }
 
 
-module.exports.newer = function(options) {
+module.exports.newer = function(targetOrOptions, options) {
 
-	var conf = getConfig(options);
+	var conf = getConfig(targetOrOptions, options);
 	var client = xmlrpc.createClient(conf.rpc_conf);
 
 	function checkFile(file, enc, callback) {
