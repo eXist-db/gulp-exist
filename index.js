@@ -8,7 +8,6 @@ var async = require("async");
 
 var getConfig = function(targetOrOptions, options) {
 
-	console.log(targetOrOptions);
 	if (typeof targetOrOptions === "object") {
 		options = targetOrOptions;
 	}
