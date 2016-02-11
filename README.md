@@ -26,7 +26,7 @@ gulp.task('deploy', function() {
 		.pipe(exist.dest({
 			host: 'localhost',
 			port: '8080',
-			auth: { username: 'admin', pass: '' },
+			auth: { username: 'admin', password: '' },
 			path: '/exist/xmlrpc',
 			target: '/db/apps/myapp',
 			// optional: make controller.xql executable
@@ -51,7 +51,7 @@ var exist = require('gulp-exist')
 var exist_config = {
 	host: 'localhost',
 	port: '8080',
-	auth: { username: 'admin', pass: '' },
+	auth: { username: 'admin', password: '' },
 	path: '/exist/xmlrpc',
 	target: '/db/apps/myapp'
 };
@@ -89,7 +89,7 @@ var exist = require('gulp-exist')
 var exist_config = {
 	host: 'localhost',
 	port: '8080',
-	auth: { username: 'admin', pass: '' },
+	auth: { username: 'admin', password: '' },
 	path: '/exist/xmlrpc',
 	target: '/db/system/config/db/apps/myapp/data',
 	xql_output_ext: 'json'
