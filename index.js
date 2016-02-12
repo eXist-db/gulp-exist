@@ -1,3 +1,5 @@
+// dependencies
+var os = require("os");
 var through = require("through2");
 var gutil = require("gulp-util");
 var PluginError = gutil.PluginError;
@@ -27,6 +29,7 @@ var defaultQueryOptions = {
     xql_output_ext: "xml"
 };
 
+var isWin =  os.platform() === 'win32'
 var client;
 
 // add common existDB file types
@@ -40,7 +43,7 @@ function isSaxParserError (error) {
 }
 
 var normalizePath = function (path) {
-    return /^win/.test(process.platform) ? path.replace(/\\/g, "/") : path;
+    return isWin ? path.replace(/\\/g, "/") : path;
 };
 
 function createCollection(client, collection, callback) {
