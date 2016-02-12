@@ -4,6 +4,29 @@ var PluginError = gutil.PluginError;
 var xmlrpc = require("xmlrpc");
 var mime = require("mime");
 var async = require("async");
+var assign = require("lodash.assign");
+
+var defaultRPCoptions = {
+    host: 'localhost',
+    port: '8080',
+    path: '/exist/xmlrpc',
+    basic_auth: {
+        user: "guest",
+        pass: "guest"
+    }
+};
+
+var defaultUploadOptions = {
+    retry: false,
+    target: '',
+    permissions: null
+};
+
+var defaultQueryOptions = {
+    print_xql_results: true,
+    xql_output_ext: "xml"
+}
+
 
 // add common existDB file types
 mime.define({
@@ -15,41 +38,6 @@ function isSaxParserError (error) {
     return error && error.faultString && /SAXParseException/.test(error.faultString)
 }
 
-var getConfig = function (targetOrOptions, options) {
-    if (typeof targetOrOptions === "object") {
-        options = targetOrOptions;
-    }
-
-    return {
-        rpc_conf: {
-            host: options.hasOwnProperty("host") ? options.host : 'localhost',
-            port: options.hasOwnProperty("port") ? options.port : '8080',
-            path: options.hasOwnProperty("path") ? options.path : '/exist/xmlrpc',
-            basic_auth: options.hasOwnProperty("auth") ? {
-                user: options.auth.username,
-                pass: options.auth.password
-            } : {user: "guest", pass: "guest"}
-        },
-        target: (function () {
-            var target = null;
-
-            if (typeof targetOrOptions === "string") {
-                target = targetOrOptions
-            } else if (options.hasOwnProperty("target")) {
-                target = options.target;
-            } else {
-                target = "";
-            }
-
-            return /\/$/.test(target) ? target : target + "/";
-        })(),
-        permissions: options.permissions || null,
-        print_xql_results: options.hasOwnProperty("print_xql_results") ? options.print_xql_results : true,
-        xql_output_ext: options.hasOwnProperty("xql_output_ext") ? options.xql_output_ext : "xml",
-        binary_fallback: options.hasOwnProperty("binary_fallback") ? options.binary_fallback : false
-    };
-};
-
 var normalizePath = function (path) {
     return /^win/.test(process.platform) ? path.replace(/\\/g, "/") : path;
 };
@@ -60,18 +48,23 @@ function createCollection(client, collection, callback) {
     client.methodCall('createCollection', [normalizedCollectionPath], callback);
 }
 
+var client;
+
+module.exports.createClient = function createClient(options) {
+    // TODO sanity checks
+    client = xmlrpc.createClient(assign({}, defaultRPCoptions, options))
+}
+
 module.exports.defineMimeTypes = function (mimeTypes) {
     mime.define(mimeTypes);
 };
 
-
-module.exports.dest = function (targetOrOptions, options) {
-    if (typeof targetOrOptions !== "object" && !options) {
+module.exports.dest = function (options) {
+    if (!client || !options) {
         throw new PluginError("gulp-exist", "Missing options.");
     }
 
-    var conf = getConfig(targetOrOptions, options);
-    var client = xmlrpc.createClient(conf.rpc_conf);
+    var conf = assign({}, defaultUploadOptions, options)
     var firstFile = null;
 
     var storeFile = function (file, enc, callback) {
@@ -172,8 +165,7 @@ module.exports.dest = function (targetOrOptions, options) {
 
 module.exports.query = function (options) {
 
-    var conf = getConfig(void 0, options);
-    var client = xmlrpc.createClient(conf.rpc_conf);
+    var conf = assign({}, defaultQueryOptions, options);
 
     function executeQuery(file, enc, callback) {
         if (file.isStream()) {
@@ -232,9 +224,8 @@ module.exports.query = function (options) {
 };
 
 
-module.exports.newer = function (targetOrOptions, options) {
-    var conf = getConfig(targetOrOptions, options);
-    var client = xmlrpc.createClient(conf.rpc_conf);
+module.exports.newer = function (options) {
+    var conf = assign({}, defaultUploadOptions, options);
 
     function checkFile(file, enc, callback) {
         var self = this;
