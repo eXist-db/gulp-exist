@@ -154,6 +154,7 @@ module.exports.dest = function (options) {
                     });
                 }
                 if (error) {
+                    gutil.log("Error: " + error);
                     return callback(error);
                 }
                 callback();
