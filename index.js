@@ -43,8 +43,7 @@ var getConfig = function (targetOrOptions, options) {
 
             return /\/$/.test(target) ? target : target + "/";
         })(),
-        permissions: options.permissions || {},
-        mime_types: options.mime_types || {},
+        permissions: options.permissions || null,
         print_xql_results: options.hasOwnProperty("print_xql_results") ? options.print_xql_results : true,
         xql_output_ext: options.hasOwnProperty("xql_output_ext") ? options.xql_output_ext : "xml",
         binary_fallback: options.hasOwnProperty("binary_fallback") ? options.binary_fallback : false
@@ -91,6 +90,16 @@ module.exports.dest = function (targetOrOptions, options) {
         var remotePath = normalizePath(conf.target + file.relative);
 
         var uploadAndParse = function (file, remotePath, mimeType, callback) {
+            // handle re-upload as octet stream if parsing failed and binary_fallback is set
+            function retryOnFail(error, result) {
+                if (isSaxParserError(error) && conf.binary_fallback) {
+                    console.dir(callback)
+                    gutil.log(file.relative + " not well-formed XML, trying to store as binary...");
+                    return uploadAndParse(file, remotePath, "application/octet-stream", callback);
+                }
+                gutil.log(' ---> ' + remotePath + ' stored');
+                callback(error, result);
+            }
             async.waterfall([
                 // First upload file
                 function (cb) {
@@ -102,71 +111,59 @@ module.exports.dest = function (targetOrOptions, options) {
                 function (fileHandle, cb) {
                     client.methodCall('parseLocal', [fileHandle, remotePath, true, mimeType], cb);
                 }
-            ],
-            // handle re-upload as octet stream if parsing failed and binary_fallback is set
-            function (error, result) {
-                if (isSaxParserError(error) && conf.binary_fallback) {
-                    gutil.log(file.relative + " not well-formed XML, trying to store as binary...");
-                    return uploadAndParse(file, remotePath, "application/octet-stream", callback);
-                }
-
-                callback(error, result);
-            });
+            ], retryOnFail);
         };
 
         async.waterfall([
-            // If this is the first file in the stream, check if the target collection exists
-            function (callback) {
-                // skip if firstFile is set
-                if (firstFile) { callback(null, true); }
+                // If this is the first file in the stream, check if the target collection exists
+                function (callback) {
+                    // skip if firstFile is set
+                    if (firstFile) { return callback(null, true); }
 
-                firstFile = file;
-                client.methodCall('describeCollection', [conf.target], function (error) {
-                    callback(null, (error == null))
-                });
-            },
+                    firstFile = file;
+                    client.methodCall('describeCollection', [conf.target], function (error) {
+                        callback(null, (error == null))
+                    });
+                },
 
-            // Then create target collection if needed
-            function (skip, callback) {
-                if (skip) { return callback(); }
-                createCollection(client, conf.target, callback);
-            },
+                // Then create target collection if needed
+                function (skip, callback) {
+                    if (skip) { return callback(null, null); }
+                    createCollection(client, conf.target, callback);
+                },
 
-            // Then upload and parse file
-            function (result, callback) {
-                var mimeType = mime.lookup(file.extname);
-                uploadAndParse(file, remotePath, mimeType, callback);
-            },
+                // Then upload and parse file
+                function (result, callback) {
+                    var mimeType = mime.lookup(file.path);
+                    uploadAndParse(file, remotePath, mimeType, callback);
+                },
 
-            // Then override permissions if specified in options
-            function (result, callback) {
-                if (!conf.permissions || !conf.permissions[file.relative]) {
-                    callback(null);
+                // Then override permissions if specified in options
+                function (result, callback) {
+                    if (!result || conf.permissions === null || !(file.relative in conf.permissions)) {
+                        return callback(null);
+                    }
+
+                    gutil.log('Setting permissions for "' + normalizePath(file.relative) + '" (' + conf.permissions[file.relative] + ')...');
+                    client.methodCall('setPermissions', [remotePath, conf.permissions[file.relative]], callback);
                 }
-                gutil.log('Setting permissions for "' + normalizePath(file.relative) + '" (' + conf.permissions[file.relative] + ')...');
-                return client.methodCall(
-                    'setPermissions',
-                    [remotePath, conf.permissions[file.relative]],
-                    callback
-                );
-            }
-        ],
-        // Handle errors and proceed to next file
-        function (error) {
-            if (isSaxParserError(error)) {
-                // Delete file on server on parse error. This is necessary because eXist modifies the
-                // mtimes of existing files on a failed upload/parse-attempt which breaks
-                // date comparisons in the newer-stream
-                gutil.log("Removing " + remotePath + " due to parse error...");
-                return client.methodCall('remove', [remotePath], function () {
-                    callback(error)
-                });
-            }
-            if (error) {
-                return callback(error);
-            }
-            callback();
-        });
+            ],
+            // Handle errors and proceed to next file
+            function (error) {
+                if (isSaxParserError(error)) {
+                    // Delete file on server on parse error. This is necessary because eXist modifies the
+                    // mtimes of existing files on a failed upload/parse-attempt which breaks
+                    // date comparisons in the newer-stream
+                    gutil.log("Removing " + remotePath + " due to parse error...");
+                    return client.methodCall('remove', [remotePath], function () {
+                        callback(error)
+                    });
+                }
+                if (error) {
+                    return callback(error);
+                }
+                callback();
+            });
     };
 
     return through.obj(storeFile);
