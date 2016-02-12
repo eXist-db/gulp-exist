@@ -25,8 +25,9 @@ var defaultUploadOptions = {
 var defaultQueryOptions = {
     print_xql_results: true,
     xql_output_ext: "xml"
-}
+};
 
+var client;
 
 // add common existDB file types
 mime.define({
@@ -48,12 +49,10 @@ function createCollection(client, collection, callback) {
     client.methodCall('createCollection', [normalizedCollectionPath], callback);
 }
 
-var client;
-
 module.exports.createClient = function createClient(options) {
     // TODO sanity checks
     client = xmlrpc.createClient(assign({}, defaultRPCoptions, options))
-}
+};
 
 module.exports.defineMimeTypes = function (mimeTypes) {
     mime.define(mimeTypes);
@@ -163,7 +162,6 @@ module.exports.dest = function (options) {
 
 
 module.exports.query = function (options) {
-
     var conf = assign({}, defaultQueryOptions, options);
 
     function executeQuery(file, enc, callback) {
