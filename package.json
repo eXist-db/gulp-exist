@@ -27,7 +27,8 @@
   },
   "homepage": "https://github.com/olvidalo/gulp-exist#readme",
   "devDependencies": {
-    "gulp": "^3.9.0"
+    "gulp": "^3.9.0",
+    "tape": "^4.5.0"
   },
   "dependencies": {
     "async": "^1.4.2",

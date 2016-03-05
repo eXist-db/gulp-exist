@@ -245,3 +245,13 @@ Type: `Object{mimetype: [extensions]}`
 exist.defineMimeTypes({ 'text/foo': ['bar'] })
 ```
 
+## Test
+
+### Prerequisites
+
+* a running eXistDB instance
+* Tape installed globally `npm i -g tape`
+
+### Run the Tests
+
+    tape spec/*.js
