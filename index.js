@@ -65,6 +65,9 @@ module.exports.defineMimeTypes = function (mimeTypes) {
     mime.define(mimeTypes);
 };
 
+module.exports.getMimeTypes = function () {
+    return mime.types;
+};
 
 function sendFilesWith(client) {
     return function send(options) {
