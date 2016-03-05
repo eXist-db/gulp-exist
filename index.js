@@ -258,18 +258,16 @@ function checkForNewerWith(client) {
     
             client.methodCall('describeResource', [normalizePath(conf.target + file.relative)], function (error, resourceInfo) {
                 if (error) {
-                    self.emit(
+                    return self.emit(
                         "error",
-                        new PluginError("gulp-exist", "Error running XQuery " + file.relative + ":\n" + error)
+                        new PluginError("gulp-exist", "Error on checking file " + file.relative + ":\n" + error)
                     );
-                    callback();
-                    return;
                 }
     
                 var newer = !resourceInfo.hasOwnProperty("modified") || (Date.parse(file.stat.mtime) > Date.parse(resourceInfo.modified));
                 callback(error, newer ? file : null);
             });
-            return;
+    
         }
     
         return through.obj(checkFile);
