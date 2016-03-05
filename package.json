@@ -1,6 +1,6 @@
 {
   "name": "gulp-exist",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Upload files to eXist-db",
   "main": "index.js",
   "scripts": {
@@ -20,7 +20,7 @@
     "xql",
     "xml"
   ],
-  "author": "Marcel Schaeben",
+  "author": "Marcel Schaeben, Juri Leino",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/olvidalo/gulp-exist/issues"
