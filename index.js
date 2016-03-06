@@ -176,22 +176,22 @@ function sendFilesWith(client) {
 function queryWith(client) {
     return function query(options) {
         var conf = assign({}, defaultQueryOptions, options);
-    
+
         function executeQuery(file, enc, callback) {
             if (file.isStream()) {
                 callback();
                 return this.emit("error", new PluginError("gulp-exist", "Streaming not supported"));
             }
-    
+
             if (file.isDirectory() || file.isNull()) {
                 callback();
                 return;
             }
-    
+
             var self = this;
-    
+
             gutil.log('Running XQuery on server: ' + file.relative);
-    
+
             async.waterfall([
                     function (callback) {
                         client.methodCall('executeQuery', [file.contents, {}], callback);
@@ -216,20 +216,20 @@ function queryWith(client) {
                         callback();
                         return;
                     }
-    
+
                     var result = Buffer.concat(results);
-    
+
                     if (conf.print_xql_results) {
                         gutil.log(result.toString());
                     }
-    
+
                     file.path = gutil.replaceExtension(file.path, "." + new Date().toJSON() + "." + conf.xql_output_ext);
                     file.contents = result;
-    
+
                     callback(null, file);
                 });
         }
-    
+
         return through.obj(executeQuery);
     };
 }
@@ -237,7 +237,7 @@ function queryWith(client) {
 function checkForNewerWith(client) {
     return function newer (options) {
         var conf = assign({}, defaultUploadOptions, options);
-    
+
         function checkFile(file, enc, callback) {
             var self = this;
     
@@ -263,7 +263,7 @@ function checkForNewerWith(client) {
             });
     
         }
-    
+
         return through.obj(checkFile);
     };
 }
