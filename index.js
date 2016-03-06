@@ -7,6 +7,7 @@ var xmlrpc = require("xmlrpc");
 var mime = require("mime");
 var async = require("async");
 var assign = require("lodash.assign");
+var File = require('vinyl');
 
 var defaultRPCoptions = {
     host: 'localhost',
@@ -71,25 +72,27 @@ module.exports.getMimeTypes = function () {
 
 function sendFilesWith(client) {
     return function send(options) {
-        if (!options) {
-            throw new PluginError("gulp-exist", "Missing options.");
-        }
         var conf = assign({}, defaultUploadOptions, options)
-        var firstFile = null;
-        var success = false;
 
-        var storeFile = function (file, enc, callback) {
-            if (file.isStream()) {
+        var storeFile = function (vf, enc, callback) {
+            if (vf.isStream()) {
                 return this.emit("error", new PluginError("gulp-exist", "Streaming not supported"));
             }
 
-            if (file.isDirectory()) {
-                return createCollection(client, normalizePath(conf.target + file.relative), callback);
+            if (vf.isDirectory()) {
+                return createCollection(client, normalizePath(conf.target + vf.relative), callback);
             }
 
-            if (file.isNull()) {
+            if (vf.isNull()) {
                 return callback();
             }
+
+            // rewrap to newer version of vinyl file object
+            var file = new File({
+                base: vf.base,
+                path: vf.path,
+                contents: vf.contents
+            });
 
             var remotePath = normalizePath(conf.target + file.relative);
 
@@ -122,21 +125,13 @@ function sendFilesWith(client) {
             };
 
             async.waterfall([
-                    // If this is the first file in the stream, check if the target collection exists
+                    // check if the target collection / folder exists and create it if necessary
                     function (callback) {
-                        // skip if firstFile is set
-                        if (firstFile) { return callback(null, true); }
-
-                        firstFile = file;
-                        client.methodCall('describeCollection', [conf.target], function (error) {
-                            callback(null, (error == null))
+                        var folder = file.relative.substring(0, file.relative.length - file.basename.length)
+                        client.methodCall('describeCollection', [conf.target + folder], function (error) {
+                            if (!error) { return callback(null, true) }
+                            createCollection(client, conf.target + folder, callback);
                         });
-                    },
-
-                    // Then create target collection if needed
-                    function (skip, callback) {
-                        if (skip) { return callback(null, null); }
-                        createCollection(client, conf.target, callback);
                     },
 
                     // Then upload and parse file
@@ -170,7 +165,6 @@ function sendFilesWith(client) {
                         gutil.log("Error: " + error);
                         return callback(error);
                     }
-                    success = true;
                     callback();
                 });
         };
