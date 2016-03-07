@@ -112,6 +112,21 @@ test('up-html5-with-retry', function (t) {
         .on('error', t.fail)
 })
 
+// upload malformed XML file as binary
+test('upload invalid xml as binary', function (t) {
+    var testClient = exist.createClient(connectionOptions)
+    gulp.src('invalid.xml', srcOptions)
+        .pipe(testClient.dest({
+            target: targetCollection,
+            invalidXMLAsBinary: true
+        }))
+        .on('finish', function () {
+            t.ok('finished')
+            t.end()
+        })
+        .on('error', t.fail)
+})
+
 // with newer (should not re-send any file)
 test('newer-no-resend', function (t) {
     var testClient = exist.createClient(connectionOptions)
