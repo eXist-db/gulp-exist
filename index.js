@@ -179,16 +179,13 @@ function queryWith(client) {
 
         function executeQuery(file, enc, callback) {
             if (file.isStream()) {
-                callback();
-                return this.emit("error", new PluginError("gulp-exist", "Streaming not supported"));
+                return callback(new PluginError("gulp-exist", "Streaming not supported"));
             }
 
             if (file.isDirectory() || file.isNull()) {
                 callback();
                 return;
             }
-
-            var self = this;
 
             gutil.log('Running XQuery on server: ' + file.relative);
 
@@ -209,12 +206,8 @@ function queryWith(client) {
                 ],
                 function (error, results) {
                     if (error) {
-                        self.emit(
-                            "error",
-                            new PluginError("gulp-exist", "Error running XQuery " + file.relative + ":\n" + error)
-                        );
-                        callback();
-                        return;
+                        var errorObject = new PluginError("gulp-exist", "Error running XQuery " + file.relative + ":\n" + error);
+                        return callback(errorObject);
                     }
 
                     var result = Buffer.concat(results);
@@ -239,8 +232,6 @@ function checkForNewerWith(client) {
         var conf = assign({}, defaultUploadOptions, options);
 
         function checkFile(file, enc, callback) {
-            var self = this;
-    
             if (file.isDirectory()) {
                 var collection = normalizePath(conf.target + file.relative);
                 client.methodCall('describeCollection', [collection], function (error, result) {
@@ -251,17 +242,9 @@ function checkForNewerWith(client) {
             }
     
             client.methodCall('describeResource', [normalizePath(conf.target + file.relative)], function (error, resourceInfo) {
-                if (error) {
-                    return self.emit(
-                        "error",
-                        new PluginError("gulp-exist", "Error on checking file " + file.relative + ":\n" + error)
-                    );
-                }
-    
                 var newer = !resourceInfo.hasOwnProperty("modified") || (Date.parse(file.stat.mtime) > Date.parse(resourceInfo.modified));
                 callback(error, newer ? file : null);
             });
-    
         }
 
         return through.obj(checkFile);
