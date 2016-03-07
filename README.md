@@ -36,8 +36,16 @@ NOTE: Non-existing collections and sub-folders will be created automatically.
 ### exist.createClient(options)
 
 Returns a set of functions to interact with an existDB instance.
+What you can do is dependent on the permissions of the user specified
+in the connection options.
 
-#### connection options
+NOTE: The connection options are passed through to the XMLRPC client 
+library. 
+So it might be possible to use different authentication methods or
+to pass in more options than mentioned below as long as your eXistDB 
+installation understands them.
+
+#### Options
 
 ##### host
 
@@ -59,7 +67,7 @@ Default: `'/exist/xmlrpc'`
 ##### basic_auth
 
 *Required*
-Type: Object
+Type: `Object`
 Default: ```{ user: 'guest', pass: 'guest' }``` 
 
 #### Example
@@ -93,7 +101,7 @@ Default: `false`
 
 ##### permissions
 
-Specify remote permissions for files
+Specify remote permissions for files as path-permission pairs.
 
 Type: `Object{path: permissions}`
 Default: `{}`
