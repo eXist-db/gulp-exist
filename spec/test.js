@@ -103,7 +103,7 @@ test('up-html5-with-retry', function (t) {
     gulp.src('test.html', srcOptions)
         .pipe(testClient.dest({
             target: targetCollection,
-            retry: true
+            invalidXMLAsBinary: true
         }))
         .on('finish', function () {
             t.ok('finished')

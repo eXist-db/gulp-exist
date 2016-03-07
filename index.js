@@ -20,7 +20,7 @@ var defaultRPCoptions = {
 };
 
 var defaultUploadOptions = {
-    retry: false,
+    invalidXMLAsBinary: false,
     target: '',
     permissions: null
 };
@@ -99,7 +99,7 @@ function sendFilesWith(client) {
             var uploadAndParse = function (file, remotePath, mimeType, callback) {
                 // handle re-upload as octet stream if parsing failed and binary_fallback is set
                 function retryOnFail(error, result) {
-                    if (isSaxParserError(error) && conf.retry) {
+                    if (isSaxParserError(error) && conf.invalidXMLAsBinary) {
                         gutil.log(file.relative + " not well-formed XML, trying to store as binary...");
                         return uploadAndParse(file, remotePath, "application/octet-stream", callback);
                     }

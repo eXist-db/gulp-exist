@@ -81,11 +81,12 @@ Remote deployment target collection. Non-existent collections will be created.
 Type: `string`
 Default `'/db'`
 
-##### retry
+##### invalidXMLAsBinary
 
-Formerly `binary_fallback`. When set to true, HTML files that cannot be 
-parsed by eXist as XHTML will be uploaded as binary files. That is most
-HTML5 documents.
+Formerly `binary_fallback`. When set to true, any file that cannot be 
+parsed as valid XML, will be uploaded as a binary file.
+That is true for most HTML5 documents. 
+NOTE: They will not be indexed and therefore not be searchable by the eXistDB.
 
 Type: `boolean`
 Default: `false`
