@@ -68,7 +68,7 @@ Default: ```{ user: 'guest', pass: 'guest' }```
 var exClient = exist.createClient()
 ```
 
-### existClient.sendTo(options)
+### existClient.dest(options)
 
 Uploads input files to a target collection in eXist.
 
@@ -111,7 +111,7 @@ var exClient = exist.createClient(connectionOptions)
 
 gulp.task('deploy', function() {
     return gulp.src('**/*', {cwd: 'build'})
-        .pipe(exClient.sendTo({
+        .pipe(exClient.dest({
             target: '/db/apps/myapp/',
             permissions: { 'controller.xql': 'rwxr-xr-x' }
         });
@@ -153,7 +153,7 @@ var targetOptions = {
 gulp.task('deploy', function() {
 	return gulp.src('**/*', {cwd: 'build'})
 		.pipe(exClient.newer(targetOptions))
-		.pipe(exClient.sendTo(targetOptions));
+		.pipe(exClient.dest(targetOptions));
 });
 ```
 
@@ -214,7 +214,7 @@ var exist_config = {
 
 gulp.task('upload-index-conf', function() {
 	return gulp.src('collection.xconf', {cwd: '.'})
-		.pipe(exClient.sendTo(exist_config));
+		.pipe(exClient.dest(exist_config));
 });
 
 gulp.task('reindex', ['upload-index-conf'], function() {

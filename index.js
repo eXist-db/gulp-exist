@@ -56,7 +56,7 @@ module.exports.createClient = function createClient(options) {
     // TODO sanity checks
     var client = xmlrpc.createClient(assign({}, defaultRPCoptions, options))
     return {
-        sendTo: sendFilesWith(client),
+        dest: sendFilesWith(client),
         query: queryWith(client),
         newer: checkForNewerWith(client)
     }

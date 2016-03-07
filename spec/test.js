@@ -31,7 +31,7 @@ test('extend mime type definitions', function (t) {
 
 test('create connection with default settings', function (t) {
     var testClient = exist.createClient()
-    t.equals(typeof testClient.sendTo, 'function')
+    t.equals(typeof testClient.dest, 'function')
     t.equals(typeof testClient.query, 'function')
     t.equals(typeof testClient.newer, 'function')
     t.end()
@@ -56,7 +56,7 @@ test('run query', function (t) {
 test('well-formed-xml', function (t) {
     var testClient = exist.createClient(connectionOptions)
     gulp.src('test.xml', srcOptions)
-        .pipe(testClient.sendTo({
+        .pipe(testClient.dest({
             target: targetCollection
         }))
         .on('finish', function () {
@@ -70,7 +70,7 @@ test('well-formed-xml', function (t) {
 test('xql-change-perms', function (t) {
     var testClient = exist.createClient(connectionOptions)
     gulp.src('test.xql', srcOptions)
-        .pipe(testClient.sendTo({
+        .pipe(testClient.dest({
             target: targetCollection,
             permissions: {
                 'test.xql': 'rwxr-xr-x'
@@ -87,7 +87,7 @@ test('xql-change-perms', function (t) {
 test('up-html5-no-retry', function (t) {
     var testClient = exist.createClient(connectionOptions)
     gulp.src('test.html', srcOptions)
-        .pipe(testClient.sendTo({
+        .pipe(testClient.dest({
             target: targetCollection
         }))
         .on('finish', t.fail) // should not finish
@@ -101,7 +101,7 @@ test('up-html5-no-retry', function (t) {
 test('up-html5-with-retry', function (t) {
     var testClient = exist.createClient(connectionOptions)
     gulp.src('test.html', srcOptions)
-        .pipe(testClient.sendTo({
+        .pipe(testClient.dest({
             target: targetCollection,
             retry: true
         }))
@@ -117,7 +117,7 @@ test('newer-no-resend', function (t) {
     var testClient = exist.createClient(connectionOptions)
     gulp.src('test.*', srcOptions)
         .pipe(testClient.newer({target: targetCollection}))
-        .pipe(testClient.sendTo({target: targetCollection}))
+        .pipe(testClient.dest({target: targetCollection}))
         .on('finish', function () {
             t.ok('finished')
             t.end()
