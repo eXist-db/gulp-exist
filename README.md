@@ -27,7 +27,7 @@ var exClient = exist.createClient(connectionOptions)
 // send all 
 gulp.task('deploy', function() {
     return gulp.src('**/*', {cwd: 'build'})
-        .pipe(exClient.sendTo({target: '/db/apps/myapp/'});
+        .pipe(exClient.dest({target: '/db/apps/myapp/'});
 })
 ```
 
