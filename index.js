@@ -8,6 +8,7 @@ var mime = require("mime");
 var async = require("async");
 var assign = require("lodash.assign");
 var File = require('vinyl');
+var Path = require("path");
 
 var defaultRPCoptions = {
     host: 'localhost',
@@ -43,7 +44,7 @@ function isSaxParserError (error) {
 }
 
 var normalizePath = function (path) {
-    return isWin ? path.replace(/\\/g, "/") : path;
+    return Path.normalize(isWin ? path.replace(/\\/g, "/") : path);
 };
 
 function createCollection(client, collection, callback) {
@@ -94,7 +95,7 @@ function sendFilesWith(client) {
                 contents: vf.contents
             });
 
-            var remotePath = normalizePath(conf.target + file.relative);
+            var remotePath = normalizePath(conf.target + "/" + file.relative);
 
             var uploadAndParse = function (file, remotePath, mimeType, callback) {
                 // handle re-upload as octet stream if parsing failed and html5AsBinary is set
@@ -233,7 +234,7 @@ function checkForNewerWith(client) {
 
         function checkFile(file, enc, callback) {
             if (file.isDirectory()) {
-                var collection = normalizePath(conf.target + file.relative);
+                var collection = normalizePath(conf.target + "/" + file.relative);
                 client.methodCall('describeCollection', [collection], function (error, result) {
                     // Include directory if it does not exist as a collection on a server
                     callback(null, result ? null : file);
@@ -241,7 +242,7 @@ function checkForNewerWith(client) {
                 return;
             }
     
-            client.methodCall('describeResource', [normalizePath(conf.target + file.relative)], function (error, resourceInfo) {
+            client.methodCall('describeResource', [normalizePath(conf.target + "/" + file.relative)], function (error, resourceInfo) {
                 var newer = !resourceInfo.hasOwnProperty("modified") || (Date.parse(file.stat.mtime) > Date.parse(resourceInfo.modified));
                 callback(error, newer ? file : null);
             });
