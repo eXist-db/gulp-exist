@@ -89,12 +89,15 @@ Remote deployment target collection. Non-existent collections will be created.
 Type: `string`
 Default `'/db'`
 
-##### invalidXMLAsBinary
+##### html5AsBinary
 
-Formerly `binary_fallback`. When set to true, any file that cannot be 
-parsed as valid XML, will be uploaded as a binary file.
-That is true for most HTML5 documents. 
-NOTE: They will not be indexed and therefore not be searchable by the eXistDB.
+When set to true, any HTML file that cannot be 
+parsed as valid XML, will be uploaded as a binary file instead.
+HTML5 documents tend to be non well-formed XML.
+
+Formerly `binary_fallback`. 
+NOTE: Binary documents can not be indexed and therefore are also not 
+searchable by the eXistDB. This option is only useful for template files.
 
 Type: `boolean`
 Default: `false`
@@ -156,7 +159,7 @@ var connectionOptions = {
 var exClient = exist.createClient(connectionOptions)
 var targetOptions = {
     target: '/db/apps/myapp/',  // the collection to write
-    retry: true                 // upload invalid XML (e.g. HTML5 templates) as binary files
+    html5AsBinary: true         // upload HTML5 templates as binary
 }
 
 gulp.task('deploy', function() {

@@ -103,28 +103,33 @@ test('up-html5-with-retry', function (t) {
     gulp.src('test.html', srcOptions)
         .pipe(testClient.dest({
             target: targetCollection,
-            invalidXMLAsBinary: true
+            html5AsBinary: true
         }))
         .on('finish', function () {
             t.ok('finished')
             t.end()
         })
-        .on('error', t.fail)
+        .on('error', function () {
+            t.fail('errored')
+            t.end()
+        })
 })
 
-// upload malformed XML file as binary
-test('upload invalid xml as binary', function (t) {
+test('non well formed XML will not be uploaded as binary', function (t) {
     var testClient = exist.createClient(connectionOptions)
     gulp.src('invalid.xml', srcOptions)
         .pipe(testClient.dest({
             target: targetCollection,
-            invalidXMLAsBinary: true
+            html5AsBinary: true
         }))
         .on('finish', function () {
-            t.ok('finished')
+            t.fail('finished')
+            t.end()
+        }) // should not finish
+        .on('error', function () {
+            t.ok('errored')
             t.end()
         })
-        .on('error', t.fail)
 })
 
 // with newer (should not re-send any file)

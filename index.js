@@ -20,7 +20,7 @@ var defaultRPCoptions = {
 };
 
 var defaultUploadOptions = {
-    invalidXMLAsBinary: false,
+    html5AsBinary: false,
     target: '',
     permissions: null
 };
@@ -97,10 +97,10 @@ function sendFilesWith(client) {
             var remotePath = normalizePath(conf.target + file.relative);
 
             var uploadAndParse = function (file, remotePath, mimeType, callback) {
-                // handle re-upload as octet stream if parsing failed and binary_fallback is set
+                // handle re-upload as octet stream if parsing failed and html5AsBinary is set
                 function retryOnFail(error, result) {
-                    if (isSaxParserError(error) && conf.invalidXMLAsBinary) {
-                        gutil.log(file.relative + " not well-formed XML, trying to store as binary...");
+                    if (isSaxParserError(error) && conf.html5AsBinary && file.extname === '.html' ) {
+                        gutil.log(file.relative + " is not well-formed XML, storing as binary...");
                         return uploadAndParse(file, remotePath, "application/octet-stream", callback);
                     }
                     if (isSaxParserError(error)) {
