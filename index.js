@@ -1,279 +1,252 @@
+// dependencies
+var os = require("os");
 var through = require("through2");
 var gutil = require("gulp-util");
 var PluginError = gutil.PluginError;
-var File = gutil.File;
 var xmlrpc = require("xmlrpc");
-var Mime = require("mime");
+var mime = require("mime");
 var async = require("async");
+var assign = require("lodash.assign");
+var File = require('vinyl');
 
-var getConfig = function(targetOrOptions, options) {
+var defaultRPCoptions = {
+    host: 'localhost',
+    port: '8080',
+    path: '/exist/xmlrpc',
+    basic_auth: {
+        user: "guest",
+        pass: "guest"
+    }
+};
 
-	if (typeof targetOrOptions === "object") {
-		options = targetOrOptions;
-	}
+var defaultUploadOptions = {
+    html5AsBinary: false,
+    target: '',
+    permissions: null
+};
 
-	return {
-		rpc_conf: {
-			host: options.hasOwnProperty("host")? options.host : 'localhost',
-			port: options.hasOwnProperty("port")? options.port : '8080', 
-			path: options.hasOwnProperty("path")? options.path : '/exist/xmlrpc',
-			basic_auth: options.hasOwnProperty("auth")? {user: options.auth.username, pass: options.auth.password} : { user: "guest", pass: "guest"}
-		},
-		target: 				(function(){
-									var target = null;
+var defaultQueryOptions = {
+    print_xql_results: true,
+    xql_output_ext: "xml"
+};
 
-									if (typeof targetOrOptions === "string") {
-										target = targetOrOptions
-									} else if (options.hasOwnProperty("target")) {
-										target = options.target;
-									} else {
-										target = "";
-									}
+var isWin = os.platform() === 'win32';
 
-									return /\/$/.test(target) ? target : target + "/";
-								})(),
-		permissions: 			options.permissions || {},
-		mime_types: 			options.mime_types || {},
-		print_xql_results: 		options.hasOwnProperty("print_xql_results")? options.print_xql_results : true,
-		xql_output_ext:         options.hasOwnProperty("xql_output_ext")? options.xql_output_ext : "xml",
-		binary_fallback:        options.hasOwnProperty("binary_fallback")? options.binary_fallback : false
-	};
+// add common existDB file types
+mime.define({
+    'application/xquery': ['xq', 'xql', 'xqm'],
+    'application/xml': ['xconf']
+});
+
+function isSaxParserError (error) {
+    return error && error.faultString && /SAXParseException/.test(error.faultString)
 }
 
-var normalizePath = function(path) {
-	
-	return /^win/.test(process.platform) ? path.replace(/\\/g,"/") : path;
-}
+var normalizePath = function (path) {
+    return isWin ? path.replace(/\\/g, "/") : path;
+};
 
 function createCollection(client, collection, callback) {
-	
-	var normalizedCollectionPath = normalizePath(collection);
-
-	gutil.log('Creating collection "' + normalizedCollectionPath + '"...');
-	client.methodCall('createCollection', [normalizedCollectionPath], callback);
+    var normalizedCollectionPath = normalizePath(collection);
+    gutil.log('Creating collection "' + normalizedCollectionPath + '"...');
+    client.methodCall('createCollection', [normalizedCollectionPath], callback);
 }
 
+module.exports.createClient = function createClient(options) {
+    // TODO sanity checks
+    var client = xmlrpc.createClient(assign({}, defaultRPCoptions, options))
+    return {
+        dest: sendFilesWith(client),
+        query: queryWith(client),
+        newer: checkForNewerWith(client)
+    }
+};
 
-module.exports.dest = function(targetOrOptions, options) {
+module.exports.defineMimeTypes = function (mimeTypes) {
+    mime.define(mimeTypes);
+};
 
-	var self = null;
+module.exports.getMimeTypes = function () {
+    return mime.types;
+};
 
-	var existError = function(error) {
-		throw new PluginError("gulp-exist", error);
-	};
-	 if(typeof targetOrOptions !== "object" && !options) {
-	 	throw new PluginError("gulp-exist", "Missing options.");
-	 }
+function sendFilesWith(client) {
+    return function send(options) {
+        var conf = assign({}, defaultUploadOptions, options)
 
-	var conf = getConfig(targetOrOptions, options);
-	var client = xmlrpc.createClient(conf.rpc_conf);
+        var storeFile = function (vf, enc, callback) {
+            if (vf.isStream()) {
+                return this.emit("error", new PluginError("gulp-exist", "Streaming not supported"));
+            }
 
-	var firstFile = null;
+            if (vf.isDirectory()) {
+                return createCollection(client, normalizePath(conf.target + vf.relative), callback);
+            }
 
-	var storeFile = function(file, enc, callback) {
-		if (file.isStream()) {
-			return this.emit("error", new PluginError("gulp-exist",  "Streaming not supported"));
-		}
+            if (vf.isNull()) {
+                return callback();
+            }
 
-		if (file.isDirectory()) {
-			return createCollection(client, normalizePath(conf.target  + file.relative), callback);
-		}
+            // rewrap to newer version of vinyl file object
+            var file = new File({
+                base: vf.base,
+                path: vf.path,
+                contents: vf.contents
+            });
 
-		if (file.isNull()) {
-			return callback();
-		}
+            var remotePath = normalizePath(conf.target + file.relative);
 
-		var mime = (function() {
-			var ext = file.path.substring(file.path.lastIndexOf("."));
-			if (conf.mime_types.hasOwnProperty(ext))
-				return conf.mime_types[ext];
-			else if (conf.mime_types.hasOwnProperty(file.relative))
-				return conf.mime_types[file.relative];
-			if (ext == ".xq" || ext == ".xql" || ext == ".xqm") 
-				return "application/xquery";
-			else if (ext == ".xconf")
-				return "application/xml";
-			else 
-				return Mime.lookup(file.path);
-		})();
+            var uploadAndParse = function (file, remotePath, mimeType, callback) {
+                // handle re-upload as octet stream if parsing failed and html5AsBinary is set
+                function retryOnFail(error, result) {
+                    if (isSaxParserError(error) && conf.html5AsBinary && file.extname === '.html' ) {
+                        gutil.log(file.relative + " is not well-formed XML, storing as binary...");
+                        return uploadAndParse(file, remotePath, "application/octet-stream", callback);
+                    }
+                    if (isSaxParserError(error)) {
+                        gutil.log(' ✖ ' + remotePath + ' was not stored');
+                        return callback(error, null);
+                    }
+                    gutil.log(' ✔ ︎' + remotePath + ' stored');
+                    callback(error, result);
+                }
+                async.waterfall([
+                    // First upload file
+                    function (cb) {
+                        gutil.log('Storing "' + file.base + file.relative + '" as (' + mimeType + ')...');
+                        client.methodCall('upload', [file.contents, file.contents.length], cb);
+                    },
 
-		var remotePath = normalizePath(conf.target + file.relative);
+                    // Then parse file on server and store to specified destination path
+                    function (fileHandle, cb) {
+                        client.methodCall('parseLocal', [fileHandle, remotePath, true, mimeType], cb);
+                    }
+                ], retryOnFail);
+            };
 
-		var uploadAndParse = function(file, remotePath, mime, callback) {
-			async.waterfall([
+            async.waterfall([
+                    // check if the target collection / folder exists and create it if necessary
+                    function (callback) {
+                        var folder = file.relative.substring(0, file.relative.length - file.basename.length)
+                        client.methodCall('describeCollection', [conf.target + folder], function (error) {
+                            if (!error) { return callback(null, true) }
+                            createCollection(client, conf.target + folder, callback);
+                        });
+                    },
 
-				// First upload file
-				function(callback){
-					gutil.log('Storing "' + remotePath + '" (' + mime + ')...');
-					
-					client.methodCall('upload', [file.contents, file.contents.length], callback);
-				},
+                    // Then upload and parse file
+                    function (result, callback) {
+                        var mimeType = mime.lookup(file.path);
+                        uploadAndParse(file, remotePath, mimeType, callback);
+                    },
 
-				// Then parse file on server and store to specified destination path
-				function(fileHandle, callback) {
-					client.methodCall('parseLocal', [fileHandle, remotePath, true, mime], callback);
-				},
-			], callback);
-		};
+                    // Then override permissions if specified in options
+                    function (result, callback) {
+                        if (!result || conf.permissions === null || !(file.relative in conf.permissions)) {
+                            return callback(null);
+                        }
 
+                        gutil.log('Setting permissions for "' + normalizePath(file.relative) + '" (' + conf.permissions[file.relative] + ')...');
+                        client.methodCall('setPermissions', [remotePath, conf.permissions[file.relative]], callback);
+                    }
+                ],
+                // Handle errors and proceed to next file
+                function (error) {
+                    if (isSaxParserError(error)) {
+                        // Delete file on server on parse error. This is necessary because eXist modifies the
+                        // mtimes of existing files on a failed upload/parse-attempt which breaks
+                        // date comparisons in the newer-stream
+                        gutil.log("Removing " + remotePath + " due to parse error...");
+                        return client.methodCall('remove', [remotePath], function () {
+                            callback(error)
+                        });
+                    }
+                    if (error) {
+                        gutil.log("Error: " + error);
+                        return callback(error);
+                    }
+                    callback();
+                });
+        };
 
-		async.waterfall([
-
-			// If this is the first file in the stream, check if the target collection exists
-			function(callback) {
-				if (firstFile == null) {
-					firstFile = file;
-					client.methodCall('describeCollection', [conf.target], function(error) { callback(null, (error == null)) });
-				} else {
-					callback(null, true);
-				}
-			},
-
-			// Then create target collection if needed
-			function(skip, callback) {
-				if (!skip) {
-					createCollection(client, conf.target, callback);
-				} else {
-					callback(null, null);
-				}
-			},
-
-			// Then upload and parse file
-			function(result, callback) {
-				uploadAndParse(file, remotePath, mime, function(error, result) {
-					if (error && conf.binary_fallback) {
-						if (/SAXParseException/.test(error.faultString)) {
-							gutil.log(file.relative + " not well-formed XML, trying to store as binary...");
-							return uploadAndParse(file, remotePath, "application/octet-stream", callback);
-						}
-					}
-
-					callback(error, result);
-				});
-			},
-		
-			// Then override permissions if specified in options
-			function(result, callback) {
-				if (conf.permissions && conf.permissions[file.relative]) {
-					gutil.log('Setting permissions for "' + normalizePath(file.relative) + '" (' + conf.permissions[file.relative] + ')...');
-					return client.methodCall(
-						'setPermissions',
-						[remotePath, conf.permissions[file.relative]],
-						callback
-					);
-				}
-
-				callback(null);
-			}
-
-		// Handle errors and proceed to next file	
-		], function(error) {
-			if (error) {
-				if (/SAXParseException/.test(error.faultString)) {
-
-					// Delete file on server on parse error. This is necessary because eXist modifies the 
-					// mtimes of existing files on a failed upload/parse-attempt which breaks 
-					// date comparisons in the newer-stream
-					gutil.log("Removing " + remotePath + " due to parse error...");
-					return client.methodCall('remove', [remotePath], function() { callback(error)});
-				}
-				return callback(error);
-			}
-			callback();
-		});	
-	};
-
-	return through.obj(storeFile);
+        return through.obj(storeFile);
+    };
 }
 
+function queryWith(client) {
+    return function query(options) {
+        var conf = assign({}, defaultQueryOptions, options);
 
-module.exports.query = function(options) {
+        function executeQuery(file, enc, callback) {
+            if (file.isStream()) {
+                return callback(new PluginError("gulp-exist", "Streaming not supported"));
+            }
 
-	var conf = getConfig(void 0, options);
-	var client = xmlrpc.createClient(conf.rpc_conf);
+            if (file.isDirectory() || file.isNull()) {
+                callback();
+                return;
+            }
 
-	function executeQuery(file, enc, callback) {
+            gutil.log('Running XQuery on server: ' + file.relative);
 
-		if (file.isStream()) {
-			callback(); return this.emit("error", new PluginError("gulp-exist",  "Streaming not supported"));
-		}
+            async.waterfall([
+                    function (callback) {
+                        client.methodCall('executeQuery', [file.contents, {}], callback);
+                    },
+                    function (resultHandle, callback) {
+                        client.methodCall('getHits', [resultHandle], function (error, hitCount) {
+                            callback(error, resultHandle, hitCount);
+                        });
+                    },
+                    function (resultHandle, hitCount, callback) {
+                        async.times(hitCount, function (n, next) {
+                            client.methodCall('retrieve', [resultHandle, n, {}], next);
+                        }, callback);
+                    }
+                ],
+                function (error, results) {
+                    if (error) {
+                        var errorObject = new PluginError("gulp-exist", "Error running XQuery " + file.relative + ":\n" + error);
+                        return callback(errorObject);
+                    }
 
-		if (file.isDirectory() || file.isNull()) {
-			callback(); return;
-		}
+                    var result = Buffer.concat(results);
 
-		var self = this;
+                    if (conf.print_xql_results) {
+                        gutil.log(result.toString());
+                    }
 
+                    file.path = gutil.replaceExtension(file.path, "." + new Date().toJSON() + "." + conf.xql_output_ext);
+                    file.contents = result;
 
-		gutil.log('Running XQuery on server: ' + file.relative);
+                    callback(null, file);
+                });
+        }
 
-		async.waterfall([
-			function(callback) {
-				client.methodCall('executeQuery', [file.contents, {}], callback);
-			},
-			function(resultHandle, callback) {
-				client.methodCall('getHits', [resultHandle], function(error, hitCount) {
-					callback(error, resultHandle, hitCount);
-				});
-			},
-			function(resultHandle, hitCount, callback) {
-				async.times(hitCount, function(n, next) {
-					client.methodCall('retrieve', [resultHandle, n, {}], next);
-				}, callback);
-			} 
-		], function(error, results) {
-			if (error) {
-				self.emit("error", new PluginError("gulp-exist", "Error running XQuery " + file.relative + ":\n" + error));
-				callback(); return;
-			}
-
-			var  result = Buffer.concat(results); 
-
-			if (conf.print_xql_results) {
-				gutil.log(result.toString());
-			}
-
-			file.path = gutil.replaceExtension(file.path, "." + new Date().toJSON() + "." + conf.xql_output_ext);
-			file.contents = result;
-
-			callback(null, file);
-		});
-	}
-
-	return through.obj(executeQuery);
+        return through.obj(executeQuery);
+    };
 }
 
+function checkForNewerWith(client) {
+    return function newer (options) {
+        var conf = assign({}, defaultUploadOptions, options);
 
-module.exports.newer = function(targetOrOptions, options) {
+        function checkFile(file, enc, callback) {
+            if (file.isDirectory()) {
+                var collection = normalizePath(conf.target + file.relative);
+                client.methodCall('describeCollection', [collection], function (error, result) {
+                    // Include directory if it does not exist as a collection on a server
+                    callback(null, result ? null : file);
+                });
+                return;
+            }
+    
+            client.methodCall('describeResource', [normalizePath(conf.target + file.relative)], function (error, resourceInfo) {
+                var newer = !resourceInfo.hasOwnProperty("modified") || (Date.parse(file.stat.mtime) > Date.parse(resourceInfo.modified));
+                callback(error, newer ? file : null);
+            });
+        }
 
-	var conf = getConfig(targetOrOptions, options);
-	var client = xmlrpc.createClient(conf.rpc_conf);
-
-	function checkFile(file, enc, callback) {
-
-		var self = this;
-
-		if (file.isDirectory()) {
-			var collection = normalizePath(conf.target + file.relative);
-			client.methodCall('describeCollection', [collection], function(error, result) {
-
-				// Include directory if it does not exist as a collection on a server
-				callback(null, result ? null : file);
-			});
-			return;
-		}
-
-		client.methodCall('describeResource', [normalizePath(conf.target + file.relative)], function(error, resourceInfo) {
-			if (error) {
-				return self.emit("error", new PluginError("gulp-exist", "Error on checking file " + file.relative + ":\n" + error));
-			}
-
-			var newer = !resourceInfo.hasOwnProperty("modified") || (Date.parse(file.stat.mtime) > Date.parse(resourceInfo.modified));
-			callback(error, newer ? file : null);
-		});
-
-	}
-
-	return through.obj(checkFile);
-
+        return through.obj(checkFile);
+    };
 }
