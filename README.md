@@ -261,9 +261,9 @@ exist.defineMimeTypes({ 'text/foo': ['bar'] })
 
 ### Prerequisites
 
-* a running eXistDB instance
-* Tape installed globally `npm i -g tape`
+A running instance of eXistDB v2.2+ at localhost port 8080 with an 
+admin user that has a blank password.
 
 ### Run the Tests
 
-    tape spec/*.js
+    npm test

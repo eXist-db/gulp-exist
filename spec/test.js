@@ -38,17 +38,17 @@ test('create connection with default settings', function (t) {
 })
 
 test('check-user-permission', function (t) {
-    t.fail('not implemented yet')
+    t.skip('not implemented yet')
     t.end()
 })
 
 test('create collection', function (t) {
-    t.fail('not implemented yet')
+    t.skip('not implemented yet')
     t.end()
 })
 
 test('run query', function (t) {
-    t.fail('not implemented yet')
+    t.skip('not implemented yet')
     t.end()
 })
 
@@ -135,12 +135,21 @@ test('non well formed XML will not be uploaded as binary', function (t) {
 // with newer (should not re-send any file)
 test('newer-no-resend', function (t) {
     var testClient = exist.createClient(connectionOptions)
+    var files = 0
     gulp.src('test.*', srcOptions)
         .pipe(testClient.newer({target: targetCollection}))
-        .pipe(testClient.dest({target: targetCollection}))
+        .on('data', function (c) {
+            if (c.relative) {
+                files += 1
+                t.fail('attempted to send the file: ' + c.relative)
+            }
+        })
         .on('finish', function () {
-            t.ok('finished')
+            t.ok(files === 0, 'all filtered')
             t.end()
         })
-        .on('error', t.fail)
+        .on('error', function () {
+            t.fail('errored')
+            t.end()
+        })
 })
