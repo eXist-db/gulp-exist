@@ -35,14 +35,14 @@ NOTE: Non-existing collections and sub-folders will be created automatically.
 
 ### exist.createClient(options)
 
-Returns a set of functions to interact with an existDB instance.
+Returns a set of functions to interact with an eXist-db instance.
 What you can do is dependent on the permissions of the user specified
 in the connection options.
 
 NOTE: The connection options are passed through to the XMLRPC client 
 library. 
 So it might be possible to use different authentication methods or
-to pass in more options than mentioned below as long as your eXistDB 
+to pass in more options than mentioned below as long as your eXist-db 
 installation understands them.
 
 #### Options
@@ -97,7 +97,7 @@ HTML5 documents tend to be non well-formed XML.
 
 Formerly `binary_fallback`. 
 NOTE: Binary documents can not be indexed and therefore are also not 
-searchable by the eXistDB. This option is only useful for template files.
+searchable by the eXist-db. This option is only useful for template files.
 
 Type: `boolean`
 Default: `false`
@@ -261,7 +261,7 @@ exist.defineMimeTypes({ 'text/foo': ['bar'] })
 
 ### Prerequisites
 
-A running instance of eXistDB v2.2+ at localhost port 8080 with an 
+A running instance of eXist-db v2.2+ at localhost port 8080 with an 
 admin user that has a blank password.
 
 ### Run the Tests
