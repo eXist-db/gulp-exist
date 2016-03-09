@@ -173,18 +173,18 @@ gulp.task('deploy', function() {
 
 Execute input files as XQuery on the server.
 
-The input files will not be stored in eXist but read locally and executed directly. The query results will be logged in the console (can be disabled by setting ```print_xql_results``` to ```false```). For each input file, the result of the query will also be emitted as an output file that can optionally be copied into a local directory for logging. Timestamps will be appended to the filename. The filename extension of the output files can be controlled with ```xql_output_ext``` (default is ```xml```).
+The input files will not be stored in eXist but read locally and executed directly. The query results will be logged in the console (can be disabled by setting ```printXqlResults``` to ```false```). For each input file, the result of the query will also be emitted as an output file that can optionally be copied into a local directory for logging. Timestamps will be appended to the filename. The filename extension of the output files can be controlled with ```xqlOutputExt``` (default is ```xml```).
 
 #### Query options
 
-##### print_xql_results
+##### printXqlResults
 
 Whether to print the results of executed XQuerys to console.
 
 Type: `boolean`
 Default: `true`
 
-##### xql_output_ext
+##### xqlOutputExt
 
 The filename extension that will be used for XQuery result files emitted by ```exist.query()```.
 
@@ -221,7 +221,7 @@ var exClient = exist.createClient(connectionOptions)
 
 var exist_config = {
 	target: '/db/system/config/db/apps/myapp/data',
-	xql_output_ext: 'json'
+	xqlOutputExt: 'json'
 };
 
 gulp.task('upload-index-conf', function() {

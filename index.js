@@ -27,8 +27,8 @@ var defaultUploadOptions = {
 };
 
 var defaultQueryOptions = {
-    print_xql_results: true,
-    xql_output_ext: "xml"
+    printXqlResults: true,
+    xqlOutputExt: "xml"
 };
 
 var isWin = os.platform() === 'win32';
@@ -213,11 +213,11 @@ function queryWith(client) {
 
                     var result = Buffer.concat(results);
 
-                    if (conf.print_xql_results) {
+                    if (conf.printXqlResults) {
                         gutil.log(result.toString());
                     }
 
-                    file.path = gutil.replaceExtension(file.path, "." + new Date().toJSON() + "." + conf.xql_output_ext);
+                    file.path = gutil.replaceExtension(file.path, "." + new Date().toJSON() + "." + conf.xqlOutputExt);
                     file.contents = result;
 
                     callback(null, file);
