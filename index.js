@@ -81,7 +81,7 @@ function sendFilesWith(client) {
             }
 
             if (vf.isDirectory()) {
-                return createCollection(client, normalizePath(conf.target + vf.relative), callback);
+                return createCollection(client, normalizePath(conf.target + "/" + vf.relative), callback);
             }
 
             if (vf.isNull()) {
@@ -129,9 +129,9 @@ function sendFilesWith(client) {
                     // check if the target collection / folder exists and create it if necessary
                     function (callback) {
                         var folder = file.relative.substring(0, file.relative.length - file.basename.length)
-                        client.methodCall('describeCollection', [conf.target + folder], function (error) {
+                        client.methodCall('describeCollection', [Path.normalize(conf.target) +  "/" + folder], function (error) {
                             if (!error) { return callback(null, true) }
-                            createCollection(client, conf.target + folder, callback);
+                            createCollection(client, Path.normalize(conf.target) + "/" + folder, callback);
                         });
                     },
 
