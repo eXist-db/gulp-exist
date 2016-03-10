@@ -257,6 +257,92 @@ Type: `Object{mimetype: [extensions]}`
 exist.defineMimeTypes({ 'text/foo': ['bar'] })
 ```
 
+## More examples
+
+### Watch
+
+```gulp watch``` will automatically upload files on change
+
+```js
+
+var gulp = require('gulp'),
+    exist = require('gulp-exist'),
+    sass = require('gulp-sass'),
+    watch = require('gulp-watch'),
+    newer = require('gulp-newer');
+
+
+var exitClient = exist.createClient({ /* some configuration */});
+
+// compile SCSS styles and put them into 'build/app/css'
+gulp.task('styles', function() {
+
+    return gulp.src('app/scss/**/*.scss')
+        .pipe(sass().on('error', sass.logError))
+        .pipe(gulp.dest('build/app/css'));
+});
+
+// copy html templates, XMLs and XQuerys to 'build' 
+gulp.task('copy', function() {
+    
+    return gulp.src('app/**/*.{xml,html,xql,xqm,xsl,rng}')
+            .pipe(newer('build'))
+            .pipe(gulp.dest('build'))
+});
+
+
+gulp.task('deploy',  function() {
+
+    return gulp.src('build/**/*', {base: 'build'})
+        .pipe(existClient.newer({target: "/db/apps/myapp"}))
+        .pipe(existClient.dest({target: "/db/apps/myapp"}));
+});
+
+gulp.task('watch-styles', function() {
+    gulp.watch('app/scss/**/*.scss', ['styles'])
+});
+
+gulp.task('watch-copy', function() {
+    gulp.watch([
+                'app/js/**/*',
+                'app/imgs/**/*',
+                'app/**/*.{xml,html,xql,xqm,xsl}'
+                ],  'copy']);
+});
+
+gulp.task('watch-deploy', function() {
+    gulp.watch('build/**/*', ['deploy']);
+});
+
+gulp.task('watch', ['watch-styles', 'watch-copy', 'watch-deploy']);
+
+```
+
+### Make XAR Archive
+
+
+```js
+
+var gulp = require('gulp'),
+    exist = require('gulp-exist'),
+    zip = require('gulp-zip')
+
+gulp.task('build', function{} {
+    // compile everything into the 'build' directory 
+});
+
+gulp.task('xar', ['build'], function() {
+    var p = require('./package.json');
+
+    return gulp.src('build' + '**/*', {base: 'build'})
+            .pipe(zip("papyri-" + p.version + ".xar"))
+            .pipe(gulp.dest("."));
+});
+
+
+```
+
+
 ## Test
 
 ### Prerequisites
