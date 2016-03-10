@@ -1,4 +1,1 @@
-xquery version "3.0";
-
-(: do something :)
-<root>hello world.</root>
+xquery version "3.0"; <result>beep</result>
