@@ -52,7 +52,7 @@ test('run query, expect XML', function (t) {
     return gulp.src('test.xql', srcOptions)
         .pipe(testClient.query({
             target: targetCollection,
-            xql_output_ext: 'json'
+            xqlOutputExt: 'json'
         }))
         .on('data', function (d) {
             t.ok(d.relative.match(/^test\.(.*)?\.json$/), 'expected filename')
@@ -69,7 +69,7 @@ test('run query, expect json', function (t) {
     return gulp.src('test.json.xql', srcOptions)
         .pipe(testClient.query({
             target: targetCollection,
-            xql_output_ext: 'json'
+            xqlOutputExt: 'json'
         }))
         .on('data', function (d) {
             t.ok(d.relative.match(/^test\.(.*)?\.json$/), 'expected filename')
