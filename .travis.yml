@@ -37,7 +37,7 @@ script:
 
 after_success:
   - python travis_after_all.py
-#  - npm run semantic-release
+  - npm run semantic-release
 
 after_script:
   - $HOME/exist/${EXIST_DB_VERSION}/bin/shutdown.sh

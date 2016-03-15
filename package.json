@@ -1,14 +1,14 @@
 {
   "name": "gulp-exist",
-  "version": "1.2.3",
   "description": "Upload files to eXist-db",
   "main": "index.js",
   "scripts": {
-    "test": "node_modules/.bin/tape spec/*.js"
+    "test": "node_modules/.bin/tape spec/*.js",
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/olvidalo/gulp-exist.git"
+    "url": "https://github.com/olvidalo/gulp-exist.git"
   },
   "keywords": [
     "gulpplugin",
@@ -28,7 +28,8 @@
   "homepage": "https://github.com/olvidalo/gulp-exist#readme",
   "devDependencies": {
     "gulp": "^3.9.0",
-    "tape": "^4.5.0"
+    "tape": "^4.5.0",
+    "semantic-release": "^4.3.5"
   },
   "dependencies": {
     "async": "^1.4.2",
