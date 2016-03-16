@@ -1,15 +1,14 @@
 // dependencies
-var os = require("os");
-var through = require("through2");
-var gutil = require("gulp-util");
-var PluginError = gutil.PluginError;
-var xmlrpc = require("xmlrpc");
-var mime = require("mime");
-var async = require("async");
-var assign = require("lodash.assign");
-var File = require('vinyl');
-var Path = require("path");
-var exist = require("node-exist");
+var os = require("os"),
+    through = require("through2"),
+    gutil = require("gulp-util"),
+    PluginError = gutil.PluginError,
+    xmlrpc = require("xmlrpc"),
+    mime = require("mime"),
+    assign = require("lodash.assign"),
+    File = require('vinyl'),
+    Path = require("path"),
+    exist = require("node-exist");
 
 var defaultRPCoptions = {
     host: 'localhost',
