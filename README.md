@@ -1,6 +1,6 @@
 # gulp-exist
 
-[![travis-ci](https://api.travis-ci.org/olvidalo/gulp-exist.png?branch=gulp-exist)](https://travis-ci.org/olvidalo/gulp-exist) 
+[![travis-ci](https://api.travis-ci.org/olvidalo/gulp-exist.png?branch=node-exist)](https://travis-ci.org/olvidalo/gulp-exist) 
 
 > A gulp plugin to deploy to and query an eXist-db using eXist's XML-RPC API.
 
