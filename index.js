@@ -80,7 +80,10 @@ function sendFilesWith (client) {
       }
 
       if (vf.isDirectory()) {
-        return createCollection(client, normalizePath(conf.target + '/' + vf.relative), callback)
+        return createCollection(client, normalizePath(conf.target + '/' + vf.relative))
+            .then(function (result) {
+              callback()
+            })
       }
 
       if (vf.isNull()) {
@@ -100,9 +103,12 @@ function sendFilesWith (client) {
       var collection = Path.normalize(conf.target) + '/' + folder
 
       // create target collection if neccessary
-      return createCollection(client, collection)
+      return client.collections.describe(collection)
+        .then(null, function () {
+          return createCollection(client, collection)
+        })
 
-        // upload file
+        // then upload file
         .then(function (result) {
           gutil.log('Storing "' + file.base + file.relative + '" as (' + mime.lookup(file.path) + ')...')
           return client.documents.upload(file.contents)
