@@ -249,8 +249,7 @@ test('newer-no-resend', function (t) {
       files += 1
       if (c.relative === 'test.json.xql') {
         return t.ok(true, 'found test.json.xql')
-      }
-      if (c.relative === 'test.unsent.xql') {
+      } else {
         t.fail('attempted to send the file: ' + c.relative)
       }
     })
