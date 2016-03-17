@@ -2,7 +2,8 @@
 
 var gulp = require('gulp'),
     test = require('tape'),
-    exist = require('../index')
+    gulpExist = require('../index'),
+    exist = require('node-exist')
 
 var srcOptions = { cwd: 'spec/files' }
 
@@ -17,7 +18,7 @@ var connectionOptions = {
 }
 
 test('check for default mime type extensions', function (t) {
-    var types = exist.getMimeTypes()
+    var types = gulpExist.getMimeTypes()
     t.equals(types['xq'], 'application/xquery')
     t.equals(types['xql'], 'application/xquery')
     t.equals(types['xqm'], 'application/xquery')
@@ -26,13 +27,13 @@ test('check for default mime type extensions', function (t) {
 })
 
 test('extend mime type definitions', function (t) {
-    exist.defineMimeTypes({ 'text/foo': ['bar'] })
-    t.equals(exist.getMimeTypes()['bar'], 'text/foo')
+    gulpExist.defineMimeTypes({ 'text/foo': ['bar'] })
+    t.equals(gulpExist.getMimeTypes()['bar'], 'text/foo')
     t.end()
 })
 
 test('create connection with default settings', function (t) {
-    var testClient = exist.createClient()
+    var testClient = gulpExist.createClient()
     t.equals(typeof testClient.dest, 'function')
     t.equals(typeof testClient.query, 'function')
     t.equals(typeof testClient.newer, 'function')
@@ -46,7 +47,7 @@ test('check-user-permission', function (t) {
 
 
 test('run query, expect XML', function (t) {
-    var testClient = exist.createClient(connectionOptions)
+    var testClient = gulpExist.createClient(connectionOptions)
     return gulp.src('test.xql', srcOptions)
         .pipe(testClient.query({
             target: targetCollection,
@@ -63,7 +64,7 @@ test('run query, expect XML', function (t) {
 })
 
 test('run query, expect json', function (t) {
-    var testClient = exist.createClient(connectionOptions)
+    var testClient = gulpExist.createClient(connectionOptions)
     return gulp.src('test.json.xql', srcOptions)
         .pipe(testClient.query({
             target: targetCollection,
@@ -88,76 +89,79 @@ test('run query, expect json', function (t) {
 
 // collections and resources are created and have the correct path
 
-test('setup: remove /tmp/ collection', function(t) {
-    var setupClient = exist.createClient(connectionOptions)
-    gulp.src('cleanup.xql', { cwd: 'spec' })
-        .pipe(setupClient.query())
-        .on('error', t.fail)
-        .on('finish', t.end)
+test('setup: remove test collection', function(t) {
+    var db = exist.connect(connectionOptions)
+    return db.collections.remove(targetCollection)
+        .then(function(result) {
+            t.end()
+        }, function(error) {
+            t.end()
+        })
 });
 
-test('setup: create collections and resources (target has trailing slash)', function (t) {
-    var testClient = exist.createClient(connectionOptions)
+test('create collections and resources (target has trailing slash)', function (t) {
+    t.plan(2)
+    var trailingSlashTarget = targetCollection + "/"
+    var testClient = gulpExist.createClient(connectionOptions)
     var files = []
     return gulp.src('**/test.xml', srcOptions)
         .pipe(testClient.dest({
-            target: targetCollection + "/"
+            target: trailingSlashTarget
         }))
         .on('error', function (e) {
             t.fail(e)
         })
-        .on('finish', t.end)
+        .on('finish', function() {
+            var db = exist.connect(connectionOptions)
+            db.resources.describe(trailingSlashTarget + 'test.xml')
+                .then(function (result) {
+                    t.pass('test.xql exists')
+                    return db.resources.describe(trailingSlashTarget + 'collection/test.xml')
+                })
+                .then(function (result) {
+                    t.pass('collection/test.xql exists')
+                    t.end()
+                }).catch(t.fail)
+        })
 })
 
-test('created resources exist (trailing slash target)', function(t) {
-    t.plan(1)
-    var testClient = exist.createClient(connectionOptions)
-    gulp.src('check.xql',  { cwd: 'spec' })
-        .pipe(testClient.query())
-        .on('error', t.fail)
-        .on('data', function (d) {
-            t.equal(d.contents.toString(), "\"true true\"", 'created resources exist (trailing slash target')
-        })
-        .on('finish', t.end)
+
+test('setup: remove test collection', function(t) {
+    var db = exist.connect(connectionOptions)
+    return db.collections.remove(targetCollection)
+        .then(function(result) {
+            t.end()
+        }, t.fail)
 });
 
-
-test('setup: remove /tmp/ collection', function(t) {
-    var setupClient = exist.createClient(connectionOptions)
-    gulp.src('cleanup.xql', { cwd: 'spec' })
-        .pipe(setupClient.query())
-        .on('error', t.fail)
-        .on('finish', t.end)
-});
-
-test('setup: create collections and resources (target does not have trailing slash)', function (t) {
-    var testClient = exist.createClient(connectionOptions)
+test('create collections and resources (target does not have trailing slash)', function (t) {
+    t.plan(2)
+    var testClient = gulpExist.createClient(connectionOptions)
     var files = []
     return gulp.src('**/test.xml', srcOptions)
         .pipe(testClient.dest({
-            target: targetCollection 
+            target: targetCollection
         }))
         .on('error', function (e) {
             t.fail(e)
         })
-        .on('finish', t.end)
-})
-
-test('created resources exist (non trailing slash target)', function(t) {
-    t.plan(1)
-    var testClient = exist.createClient(connectionOptions)
-    gulp.src('check.xql',  { cwd: 'spec' })
-        .pipe(testClient.query())
-        .on('error', t.fail)
-        .on('data', function (d) {
-            t.equal(d.contents.toString(), "\"true true\"", 'created resources exist (non trailing slash target)')
+        .on('finish', function() {
+            var db = exist.connect(connectionOptions)
+            db.resources.describe(targetCollection + 'test.xml')
+                .then(function (result) {
+                    t.pass('test.xql exists')
+                    return db.resources.describe(targetCollection + 'collection/test.xml')
+                })
+                .then(function (result) {
+                    t.pass('collection/test.xql exists')
+                    t.end()
+                }).catch(t.fail)
         })
-        .on('finish', t.end)
-});
+})
 
 // well formed xml
 test('well-formed-xml', function (t) {
-    var testClient = exist.createClient(connectionOptions)
+    var testClient = gulpExist.createClient(connectionOptions)
     gulp.src('test.xml', srcOptions)
         .pipe(testClient.dest({
             target: targetCollection
@@ -171,7 +175,7 @@ test('well-formed-xml', function (t) {
 
 // xquery file with permission changes
 test('xql-change-perms', function (t) {
-    var testClient = exist.createClient(connectionOptions)
+    var testClient = gulpExist.createClient(connectionOptions)
     gulp.src('test.xql', srcOptions)
         .pipe(testClient.dest({
             target: targetCollection,
@@ -180,29 +184,35 @@ test('xql-change-perms', function (t) {
             }
         }))
         .on('finish', function () {
-            t.ok('finished')
-            t.end()
+            t.pass('uploaded')
+            var db = exist.connect(connectionOptions)
+            db.resources.getPermissions(targetCollection + '/test.xql')
+                .then(function (result) {
+                    t.ok(result.permissions == 493, 'permissions correctly set')
+                    t.end()
+                })
+                .catch(t.fail)
         })
         .on('error', t.fail)
 })
 
 // upload HTML5 file without retry
 test('up-html5-no-retry', function (t) {
-    var testClient = exist.createClient(connectionOptions)
+    var testClient = gulpExist.createClient(connectionOptions)
     gulp.src('test.html', srcOptions)
         .pipe(testClient.dest({
             target: targetCollection
         }))
         .on('finish', t.fail) // should not finish
         .on('error', function () {
-            t.ok('errored')
+            t.pass('errored')
             t.end()
         })
 })
 
 // upload HTML5 file with retry
 test('up-html5-with-retry', function (t) {
-    var testClient = exist.createClient(connectionOptions)
+    var testClient = gulpExist.createClient(connectionOptions)
     gulp.src('test.html', srcOptions)
         .pipe(testClient.dest({
             target: targetCollection,
@@ -219,7 +229,7 @@ test('up-html5-with-retry', function (t) {
 })
 
 test('non well formed XML will not be uploaded as binary', function (t) {
-    var testClient = exist.createClient(connectionOptions)
+    var testClient = gulpExist.createClient(connectionOptions)
     gulp.src('invalid.xml', srcOptions)
         .pipe(testClient.dest({
             target: targetCollection,
@@ -237,7 +247,7 @@ test('non well formed XML will not be uploaded as binary', function (t) {
 
 // with newer (should not re-send any file)
 test('newer-no-resend', function (t) {
-    var testClient = exist.createClient(connectionOptions)
+    var testClient = gulpExist.createClient(connectionOptions)
     var files = 0
     gulp.src('test.*', srcOptions)
         .pipe(testClient.newer({target: targetCollection}))
