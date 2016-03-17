@@ -201,9 +201,9 @@ function checkForNewerWith (client) {
         var collection = normalizePath(conf.target + '/' + file.relative)
         client.collections.describe(collection)
           .then(function () {
-            callback(null, file)
-          }, function () {
             callback(null)
+          }, function () {
+            callback(null, file)
           })
 
         return
