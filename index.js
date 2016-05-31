@@ -43,7 +43,7 @@ function isSaxParserError (error) {
 }
 
 function normalizePath (path) {
-  return Path.normalize(isWin ? path.replace(/\\/g, '/') : path)
+  return isWin ? Path.normalize(path).replace(/\\/g, '/') : Path.normalize(path)
 }
 
 function createCollection (client, collection) {
