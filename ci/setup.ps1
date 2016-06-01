@@ -22,5 +22,3 @@ if (-Not (Test-Path C:\build\exist-eXist-$env:EXIST_VERSION -PathType Any)) {
 cd $env:APPVEYOR_BUILD_FOLDER
 
 npm prune
-
-Start-sleep -s 30
