@@ -1,7 +1,3 @@
-if (-Not (Test-Path build -PathType Any)) {
-  mkdir build
-}
-
 if (-Not (Test-Path C:\build\exist-eXist-$env:EXIST_VERSION -PathType Any)) {
   Add-AppveyorMessage -Message \"Download and build eXist-db $env:EXIST_VERSION from https://github.com/eXist-db/exist/archive/eXist-$env:EXIST_VERSION.zip\"
 
