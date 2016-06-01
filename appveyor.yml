@@ -1,0 +1,26 @@
+version: 1.2.{build}
+
+environment:
+  EXIST_VERSION: 2.2
+  matrix:
+  - NODE_VERSION: 4
+  - NODE_VERSION: 5
+  - NODE_VERSION: 6 
+
+
+install:
+  - ps: Install-Product node $env:NODE_VERSION
+  - cmd: npm install
+  - ps: ./ci/setup.ps1
+      
+test_script: 
+  - cmd: npm test
+      
+after_test: 
+  - ps: ./ci/teardown.ps1
+
+cache:
+  - C:\build
+  - node_modules
+  
+build: off
