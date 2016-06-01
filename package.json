@@ -3,7 +3,7 @@
   "description": "Upload files to eXist-db",
   "main": "index.js",
   "scripts": {
-    "test": "node_modules/.bin/standard && node_modules/.bin/tape spec/*.js",
+    "test": "standard && tape spec/*.js",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "repository": {
