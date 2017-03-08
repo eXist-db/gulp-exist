@@ -32,12 +32,6 @@ var defaultQueryOptions = {
 
 var isWin = os.platform() === 'win32'
 
-// add common existDB file types
-mime.define({
-  'application/xquery': ['xq', 'xql', 'xqm'],
-  'application/xml': ['xconf']
-})
-
 function isSaxParserError (error) {
   return error && error.faultString && /SAXParseException/.test(error.faultString)
 }
