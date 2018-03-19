@@ -197,7 +197,6 @@ test('up-html5-no-retry', function (t) {
     .pipe(testClient.dest({
       target: targetCollection
     }))
-    .on('finish', t.fail) // should not finish
     .on('error', function () {
       t.pass('errored')
       t.end()
@@ -229,12 +228,8 @@ test('non well formed XML will not be uploaded as binary', function (t) {
       target: targetCollection,
       html5AsBinary: true
     }))
-    .on('finish', function () {
-      t.fail('finished')
-      t.end()
-    }) // should not finish
     .on('error', function () {
-      t.ok('errored')
+      t.pass('invalid XML was not uploaded')
       t.end()
     })
 })
