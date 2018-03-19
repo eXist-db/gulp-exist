@@ -15,9 +15,13 @@ if (-Not (Test-Path C:\build\exist-eXist-$env:EXIST_VERSION -PathType Any)) {
   cd C:/build/exist-eXist-$env:EXIST_VERSION
 }
 
-& ./tools/wrapper/bin/install.bat
-
-& ./tools/wrapper/bin/wrapper-windows-x86-64.exe --start ..\conf\wrapper.conf
+if ($env:EXIST_VERSION -eq "2.2") {
+    & ./tools/wrapper/bin/install.bat
+    & ./tools/wrapper/bin/wrapper-windows-x86-64.exe --start ..\conf\wrapper.conf
+} else {
+    $env:EXIST_PROCESS = Start-Process -NoNewWindow .\bin\startup.bat -PassThru
+    sleep 30
+}
 
 cd $env:APPVEYOR_BUILD_FOLDER
 
