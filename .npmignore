@@ -1,5 +1,6 @@
 dev
 nohup.out
 .travis.yml
+appveyor.yml
 travis*
 ci
