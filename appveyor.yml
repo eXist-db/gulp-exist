@@ -1,12 +1,12 @@
 version: 1.2.{build}
 
 environment:
-  EXIST_VERSION: 2.2
-  matrix:
-  - NODE_VERSION: 4
-  - NODE_VERSION: 5
-  - NODE_VERSION: 6 
+  NODE_VERSION: 6
 
+  matrix:
+  - EXIST_VERSION: 3.6.1
+  - EXIST_VERSION: 4.0.0
+  - EXIST_VERSION: 2.2
 
 install:
   - ps: Install-Product node $env:NODE_VERSION

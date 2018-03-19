@@ -3,10 +3,10 @@ language: node_js
 node_js:
   - "6"
   - "5"
-  - "4"
 
 env:
-  - EXIST_DB_VERSION=eXist-3.1.0
+  - EXIST_DB_VERSION=eXist-4.0.0
+  - EXIST_DB_VERSION=eXist-3.6.1
   - EXIST_DB_VERSION=eXist-2.2
 
 addons:
