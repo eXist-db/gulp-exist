@@ -1,11 +1,14 @@
 language: node_js
 
 node_js:
+  - "10"
+  - "8"
   - "6"
   - "5"
 
 env:
-  - EXIST_DB_VERSION=eXist-4.0.0
+  - EXIST_DB_VERSION=eXist-5.0.0-rc1
+  - EXIST_DB_VERSION=eXist-4.2.1
   - EXIST_DB_VERSION=eXist-3.6.1
   - EXIST_DB_VERSION=eXist-2.2
 
