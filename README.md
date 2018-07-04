@@ -1,13 +1,13 @@
 # gulp-exist
 
 [![version](https://img.shields.io/npm/v/gulp-exist.svg)](https://www.npmjs.com/package/gulp-exist) [![travis-ci](https://api.travis-ci.org/olvidalo/gulp-exist.png)](https://travis-ci.org/olvidalo/gulp-exist) [![windows ci](https://ci.appveyor.com/api/projects/status/wcbi1e0yx47prhl6?svg=true)](https://ci.appveyor.com/project/olvidalo/gulp-exist)
- 
+
 
 > A gulp plugin to deploy to and query an eXist-db using eXist's XML-RPC API.
 
 ## Usage
 
-`gulp deploy` will store all files in the ```build``` directory to 
+`gulp deploy` will store all files in the ```build``` directory to
 **/db/apps/myapp** collection in eXist.
 
 
@@ -25,7 +25,7 @@ var connectionOptions = {
 
 var exClient = exist.createClient(connectionOptions)
 
-// send all 
+// send all
 gulp.task('deploy', function() {
     return gulp.src('**/*', {cwd: 'build'})
         .pipe(exClient.dest({target: '/db/apps/myapp/'});
@@ -40,10 +40,10 @@ Returns a set of functions to interact with an eXist-db instance.
 What you can do is dependent on the permissions of the user specified
 in the connection options.
 
-NOTE: The connection options are passed through to the XMLRPC client 
-library. 
+NOTE: The connection options are passed through to the XMLRPC client
+library.
 So it might be possible to use different authentication methods or
-to pass in more options than mentioned below as long as your eXist-db 
+to pass in more options than mentioned below as long as your eXist-db
 installation understands them.
 
 #### Options
@@ -69,7 +69,7 @@ Default: `'/exist/xmlrpc'`
 
 *Required*
 Type: `Object`
-Default: ```{ user: 'guest', pass: 'guest' }``` 
+Default: ```{ user: 'guest', pass: 'guest' }```
 
 #### Example
 
@@ -92,12 +92,12 @@ Default `'/db'`
 
 ##### html5AsBinary
 
-When set to true, any HTML file that cannot be 
+When set to true, any HTML file that cannot be
 parsed as valid XML, will be uploaded as a binary file instead.
 HTML5 documents tend to be non well-formed XML.
 
-Formerly `binary_fallback`. 
-NOTE: Binary documents can not be indexed and therefore are also not 
+Formerly `binary_fallback`.
+NOTE: Binary documents can not be indexed and therefore are also not
 searchable by the eXist-db. This option is only useful for template files.
 
 Type: `boolean`
@@ -198,7 +198,7 @@ Upload a collection index configuration file and re-index the collection
 
 *```scripts/reindex.xql```*
 ```xquery
-xquery version "3.0";
+xquery version "3.1";
 declare option exist:serialize "method=json media-type=text/javascript";
 <result>
 	<success>{xmldb:reindex('/db/apps/myapp/data')}</success>
@@ -233,7 +233,7 @@ gulp.task('upload-index-conf', function() {
 gulp.task('reindex', ['upload-index-conf'], function() {
 	return gulp.src('scripts/reindex.xql')
 		.pipe(exClient.query(exist_config))
-		
+
 		// optional: store the query result locally in 'logs'
 		.pipe(gulp.dest('logs'));
 });
@@ -244,7 +244,7 @@ gulp.task('reindex', ['upload-index-conf'], function() {
 Override the mime type used to store files in exist based on their extension.
 `defineMimeTypes` just exposes `mime.define()`.
 
-Extended by default: 
+Extended by default:
 `{
     'application/xquery': ['xq', 'xql', 'xqm'],
     'application/xml': ['xconf']
@@ -277,15 +277,13 @@ var exitClient = exist.createClient({ /* some configuration */});
 
 // compile SCSS styles and put them into 'build/app/css'
 gulp.task('styles', function() {
-
     return gulp.src('app/scss/**/*.scss')
         .pipe(sass().on('error', sass.logError))
         .pipe(gulp.dest('build/app/css'));
 });
 
-// copy html templates, XMLs and XQuerys to 'build' 
+// copy html templates, XMLs and XQuerys to 'build'
 gulp.task('copy', function() {
-    
     return gulp.src('app/**/*.{xml,html,xql,xqm,xsl,rng}')
             .pipe(newer('build'))
             .pipe(gulp.dest('build'))
@@ -293,14 +291,13 @@ gulp.task('copy', function() {
 
 
 gulp.task('deploy',  function() {
-
     return gulp.src('build/**/*', {base: 'build'})
         .pipe(existClient.newer({target: "/db/apps/myapp"}))
         .pipe(existClient.dest({target: "/db/apps/myapp"}));
 });
 
 gulp.task('watch-styles', function() {
-    gulp.watch('app/scss/**/*.scss', ['styles'])
+    gulp.watch('app/scss/**/*.scss', gulp.series('styles'))
 });
 
 gulp.task('watch-copy', function() {
@@ -308,14 +305,15 @@ gulp.task('watch-copy', function() {
                 'app/js/**/*',
                 'app/imgs/**/*',
                 'app/**/*.{xml,html,xql,xqm,xsl}'
-                ],  'copy']);
+                ],  
+                gulp.series('copy'));
 });
 
 gulp.task('watch-deploy', function() {
-    gulp.watch('build/**/*', ['deploy']);
+    gulp.watch('build/**/*', gulp.series('deploy'));
 });
 
-gulp.task('watch', ['watch-styles', 'watch-copy', 'watch-deploy']);
+gulp.task('watch', gulp.parallel('watch-styles', 'watch-copy', 'watch-deploy'));
 
 ```
 
@@ -329,16 +327,16 @@ var gulp = require('gulp'),
     zip = require('gulp-zip')
 
 gulp.task('build', function{} {
-    // compile everything into the 'build' directory 
+    // compile everything into the 'build' directory
 });
 
-gulp.task('xar', ['build'], function() {
+gulp.task('xar', gulp.series('build', function() {
     var p = require('./package.json');
 
     return gulp.src('build' + '**/*', {base: 'build'})
             .pipe(zip("papyri-" + p.version + ".xar"))
             .pipe(gulp.dest("."));
-});
+}));
 
 
 ```
@@ -348,7 +346,7 @@ gulp.task('xar', ['build'], function() {
 
 ### Prerequisites
 
-A running instance of eXist-db v2.2+ at localhost port 8080 with an 
+A running instance of eXist-db v2.2+ at localhost port 8080 with an
 admin user that has a blank password.
 
 ### Run the Tests
