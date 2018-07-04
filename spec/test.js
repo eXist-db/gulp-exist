@@ -22,6 +22,7 @@ test('check for default mime type extensions', function (t) {
   t.equals(types['xql'], 'application/xquery')
   t.equals(types['xqm'], 'application/xquery')
   t.equals(types['xconf'], 'application/xml')
+  t.equals(types['odd'], 'application/xml')
   t.end()
 })
 
@@ -49,16 +50,16 @@ test('run query, expect XML', function (t) {
   return gulp.src('test.xql', srcOptions)
     .pipe(testClient.query({
       target: targetCollection,
-      xqlOutputExt: 'json'
+      xqlOutputExt: 'xml'
     }))
     .on('data', function (d) {
-      t.ok(d.relative.match(/^test\.(.*)?\.json$/), 'expected filename')
+      console.log(d.contents.toString())
+      console.log(d.relative.toString())
+      t.ok(d.relative.match(/^test\.(.*)?\.xml$/), 'expected filename')
       t.ok(d.contents.toString() === '<result>beep</result>', 'expected contents')
     })
-    .on('error', function (e) {
-      t.fail(e)
-    })
-    .on('finish', t.end)
+    .on('error', e => t.fail(e))
+    .on('finish', _ => t.end())
 })
 
 test('run query, expect json', function (t) {
@@ -78,10 +79,8 @@ test('run query, expect json', function (t) {
       // all values are strings by default
       t.deepEqual(parsedContents.item, ['1', '2', '3'], 'all items present')
     })
-    .on('error', function (e) {
-      t.fail(e)
-    })
-    .on('finish', t.end)
+    .on('error', e => t.fail(e))
+    .on('finish', _ => t.end())
 })
 
 // collections and resources are created and have the correct path
@@ -89,11 +88,7 @@ test('run query, expect json', function (t) {
 test('setup: remove test collection', function (t) {
   var db = exist.connect(connectionOptions)
   return db.collections.remove(targetCollection)
-    .then(function (result) {
-      t.end()
-    }, function () {
-      t.end()
-    })
+    .then(_ => t.end(), _ => t.end())
 })
 
 test('create collections and resources (target has trailing slash)', function (t) {
@@ -104,9 +99,7 @@ test('create collections and resources (target has trailing slash)', function (t
     .pipe(testClient.dest({
       target: trailingSlashTarget
     }))
-    .on('error', function (e) {
-      t.fail(e)
-    })
+    .on('error', e => t.fail('errored', e))
     .on('finish', function () {
       var db = exist.connect(connectionOptions)
       db.resources.describe(trailingSlashTarget + 'test.xml')
@@ -117,16 +110,15 @@ test('create collections and resources (target has trailing slash)', function (t
         .then(function (result) {
           t.pass('collection/test.xql exists')
           t.end()
-        }).catch(t.fail)
+        })
+        .catch(e => t.fail(e))
     })
 })
 
 test('setup: remove test collection', function (t) {
   var db = exist.connect(connectionOptions)
   return db.collections.remove(targetCollection)
-    .then(function (result) {
-      t.end()
-    }, t.fail)
+    .then(_ => t.end(), _ => t.fail())
 })
 
 test('create collections and resources (target does not have trailing slash)', function (t) {
@@ -136,9 +128,7 @@ test('create collections and resources (target does not have trailing slash)', f
     .pipe(testClient.dest({
       target: targetCollection
     }))
-    .on('error', function (e) {
-      t.fail(e)
-    })
+    .on('error', e => t.fail(e))
     .on('finish', function () {
       var db = exist.connect(connectionOptions)
       db.resources.describe(targetCollection + 'test.xml')
@@ -149,7 +139,8 @@ test('create collections and resources (target does not have trailing slash)', f
         .then(function (result) {
           t.pass('collection/test.xql exists')
           t.end()
-        }).catch(t.fail)
+        })
+        .catch(e => t.fail(e))
     })
 })
 
@@ -164,7 +155,7 @@ test('well-formed-xml', function (t) {
       t.ok('finished')
       t.end()
     })
-    .on('error', t.fail)
+    .on('error', e => t.fail(e))
 })
 
 // xquery file with permission changes
@@ -185,9 +176,9 @@ test('xql-change-perms', function (t) {
           t.ok(result.permissions === 493, 'permissions correctly set')
           t.end()
         })
-        .catch(t.fail)
+        .catch(e => t.fail(e))
     })
-    .on('error', t.fail)
+    .on('error', e => t.fail(e))
 })
 
 // upload HTML5 file without retry
@@ -197,8 +188,8 @@ test('up-html5-no-retry', function (t) {
     .pipe(testClient.dest({
       target: targetCollection
     }))
-    .on('error', function () {
-      t.pass('errored')
+    .on('error', function (e) {
+      t.ok(e, 'errored')
       t.end()
     })
 })
