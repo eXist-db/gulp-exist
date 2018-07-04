@@ -1,6 +1,6 @@
 // tests
 
-var gulp = require('gulp')
+var gulp = require('gulp4')
 var test = require('tape')
 var gulpExist = require('../index')
 var exist = require('node-exist')

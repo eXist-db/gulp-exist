@@ -1,8 +1,8 @@
 // dependencies
 var os = require('os')
 var through = require('through2')
-var gutil = require('gulp-util')
-var PluginError = gutil.PluginError
+var log = require('fancy-log')
+var PluginError = require('plugin-error')
 var mime = require('mime')
 var assign = require('lodash.assign')
 var File = require('vinyl')
@@ -42,7 +42,7 @@ function normalizePath (path) {
 
 function createCollection (client, collection) {
   var normalizedCollectionPath = normalizePath(collection)
-  gutil.log('Creating collection "' + normalizedCollectionPath + '"...')
+  log('Creating collection "' + normalizedCollectionPath + '"...')
   return client.collections.create(normalizedCollectionPath)
 }
 
@@ -75,9 +75,9 @@ function sendFilesWith (client) {
 
       if (vf.isDirectory()) {
         return createCollection(client, normalizePath(conf.target + '/' + vf.relative))
-            .then(function (result) {
-              callback()
-            })
+          .then(function (result) {
+            callback()
+          })
       }
 
       if (vf.isNull()) {
@@ -104,7 +104,7 @@ function sendFilesWith (client) {
 
         // then upload file
         .then(function (result) {
-          gutil.log('Storing "' + file.base + file.relative + '" as (' + mime.lookup(file.path) + ')...')
+          log('Storing "' + file.base + file.relative + '" as (' + mime.lookup(file.path) + ')...')
           return client.documents.upload(file.contents)
         })
 
@@ -116,7 +116,7 @@ function sendFilesWith (client) {
         // handle re-upload as octet stream if parsing failed and html5AsBinary is set
         .then(null, function (error) {
           if (isSaxParserError(error) && conf.html5AsBinary && file.extname === '.html') {
-            gutil.log(file.relative + ' is not well-formed XML, storing as binary...')
+            log(file.relative + ' is not well-formed XML, storing as binary...')
             return client.documents.upload(file.contents)
               .then(function (result) {
                 return client.documents.parseLocal(result, remotePath, {mimetype: 'application/octet-stream'})
@@ -129,18 +129,18 @@ function sendFilesWith (client) {
         // Then override permissions if specified in options
         .then(function (result) {
           if (conf.permissions && file.relative in conf.permissions) {
-            gutil.log('Setting permissions for "' + normalizePath(file.relative) + '" (' + conf.permissions[file.relative] + ')...')
+            log('Setting permissions for "' + normalizePath(file.relative) + '" (' + conf.permissions[file.relative] + ')...')
             return client.resources.setPermissions(remotePath, conf.permissions[file.relative])
           }
         })
 
         // Print result and proceed to next file
         .then(function (result) {
-          gutil.log(' ✔ ︎' + remotePath + ' stored')
+          log(' ✔ ︎' + remotePath + ' stored')
           return callback(null, file)
         })
         .catch(function (error) {
-          gutil.log(' ✖ ' + remotePath + ' was not stored')
+          log(' ✖ ' + remotePath + ' was not stored')
           return callback(error)
         })
     }
@@ -163,16 +163,16 @@ function queryWith (client) {
         return
       }
 
-      gutil.log('Running XQuery on server: ' + file.relative)
+      log('Running XQuery on server: ' + file.relative)
 
       client.queries.readAll(file.contents, {})
         .then(function (result) {
           var resultBuffer = Buffer.concat(result.pages)
           if (conf.printXqlResults) {
-            gutil.log(resultBuffer.toString())
+            log(resultBuffer.toString())
           }
 
-          file.path = gutil.replaceExtension(file.path, '.' + new Date().toJSON() + '.' + conf.xqlOutputExt)
+          file.extname = `.${new Date().toJSON()}.${conf.xqlOutputExt}`
           file.contents = resultBuffer
 
           return callback(null, file)
