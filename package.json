@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "standard && tape spec/*.js",
-    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
+    "semantic-release": "semantic-release"
   },
   "repository": {
     "type": "git",
@@ -27,7 +27,7 @@
   },
   "homepage": "https://github.com/olvidalo/gulp-exist#readme",
   "devDependencies": {
-    "semantic-release": "^4.3.5",
+    "semantic-release": "^15.0.0",
     "standard": "^11.0.1",
     "tape": "^4.9.1"
   },
