@@ -20,7 +20,16 @@
     "xql",
     "xml"
   ],
-  "author": "Marcel Schaeben, Juri Leino",
+  "author": "Marcel Schaeben",
+  "maintainers": [
+    {
+      "name": "Marcel Schaeben"
+    },
+    {
+      "name": "Juri Leino",
+      "email": "npm@line-o.de"
+    }
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/eXist-db/gulp-exist/issues"
