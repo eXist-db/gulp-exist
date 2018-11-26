@@ -3,11 +3,10 @@ var os = require('os')
 var through = require('through2')
 var log = require('fancy-log')
 var PluginError = require('plugin-error')
-var mime = require('mime')
 var assign = require('lodash.assign')
 var File = require('vinyl')
 var Path = require('path')
-var exist = require('node-exist')
+var exist = require('@existdb/node-exist')
 
 var defaultRPCoptions = {
   host: 'localhost',
@@ -57,11 +56,11 @@ module.exports.createClient = function createClient (options) {
 }
 
 module.exports.defineMimeTypes = function (mimeTypes) {
-  mime.define(mimeTypes)
+  exist.defineMimeTypes(mimeTypes)
 }
 
-module.exports.getMimeTypes = function () {
-  return mime.types
+module.exports.getMimeType = function (path) {
+  return exist.getMimeType(path)
 }
 
 function sendFilesWith (client) {
@@ -104,13 +103,13 @@ function sendFilesWith (client) {
 
         // then upload file
         .then(function (result) {
-          log('Storing "' + file.base + file.relative + '" as (' + mime.lookup(file.path) + ')...')
+          log('Storing "' + file.base + file.relative + '" as (' + exist.getMimeType(file.path) + ')...')
           return client.documents.upload(file.contents)
         })
 
         // parse file on server
         .then(function (result) {
-          return client.documents.parseLocal(result, remotePath, {mimetype: mime.lookup(file.path)})
+          return client.documents.parseLocal(result, remotePath, {mimetype: exist.getMimeType(file.path)})
         })
 
         // handle re-upload as octet stream if parsing failed and html5AsBinary is set
