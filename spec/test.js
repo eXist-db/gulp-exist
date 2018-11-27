@@ -229,7 +229,7 @@ test('newer-no-resend', function (t) {
   var testClient = gulpExist.createClient(connectionOptions)
   var files = 0
   gulp.src('test.*', srcOptions)
-    .pipe(testClient.newer({target: targetCollection}))
+    .pipe(testClient.newer({ target: targetCollection }))
     .on('data', function (c) {
       files += 1
       if (c.relative === 'test.json.xql') {

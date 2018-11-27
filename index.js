@@ -109,7 +109,7 @@ function sendFilesWith (client) {
 
         // parse file on server
         .then(function (result) {
-          return client.documents.parseLocal(result, remotePath, {mimetype: exist.getMimeType(file.path)})
+          return client.documents.parseLocal(result, remotePath, { mimetype: exist.getMimeType(file.path) })
         })
 
         // handle re-upload as octet stream if parsing failed and html5AsBinary is set
@@ -118,7 +118,7 @@ function sendFilesWith (client) {
             log(file.relative + ' is not well-formed XML, storing as binary...')
             return client.documents.upload(file.contents)
               .then(function (result) {
-                return client.documents.parseLocal(result, remotePath, {mimetype: 'application/octet-stream'})
+                return client.documents.parseLocal(result, remotePath, { mimetype: 'application/octet-stream' })
               })
           } else {
             throw error
