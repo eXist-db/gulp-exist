@@ -10,4 +10,5 @@ else
   cd ${FOLDER}
   ./build.sh clean-default-data-dir
   rm -rf webapp/WEB-INF/logs/*.log
+  rm -rf tools/jetts/logs/*.log
 fi

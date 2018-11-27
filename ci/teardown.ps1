@@ -7,3 +7,4 @@ if ($env:EXIST_VERSION -eq "2.2") {
 }
 & ./build.bat clean-default-data-dir
 Remove-Item -Recurse -Force webapp/WEB-INF/logs/*
+Remove-Item -Recurse -Force tools/jetty/logs/*
