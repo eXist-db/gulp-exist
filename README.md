@@ -12,18 +12,18 @@
 
 
 ```js
-var gulp = require('gulp'),
-    exist = require('gulp-exist')
+const gulp = require('gulp'),
+    exist = require('@existdb/gulp-exist')
 
 // authenticate against eXist
-var connectionOptions = {
+const connectionOptions = {
     basic_auth: {
         user: "admin",
         pass: "****************"
     }
 }
 
-var exClient = exist.createClient(connectionOptions)
+const exClient = exist.createClient(connectionOptions)
 
 // send all
 gulp.task('deploy', function() {
@@ -120,7 +120,7 @@ Default: `{}`
 #### Example
 
 ```js
-var exClient = exist.createClient(connectionOptions)
+const exClient = exist.createClient(connectionOptions)
 
 gulp.task('deploy', function() {
     return gulp.src('**/*', {cwd: 'build'})
@@ -146,19 +146,19 @@ Which collection to compare the local files to.
 Only upload modified files.
 
 ```js
-var gulp = require('gulp'),
-    exist = require('gulp-exist')
+const gulp = require('gulp'),
+    exist = require('@existdb/gulp-exist')
 
 // override defaults
-var connectionOptions = {
+const connectionOptions = {
     basic_auth: {
         user: 'admin',
         pass: '****************'
     }
 }
 
-var exClient = exist.createClient(connectionOptions)
-var targetOptions = {
+const exClient = exist.createClient(connectionOptions)
+const targetOptions = {
     target: '/db/apps/myapp/',  // the collection to write
     html5AsBinary: true         // upload HTML5 templates as binary
 }
@@ -207,20 +207,20 @@ declare option exist:serialize "method=json media-type=text/javascript";
 
 *```gulpfile.js```*
 ```js
-var gulp = require('gulp'),
-    exist = require('gulp-exist')
+const gulp = require('gulp'),
+    exist = require('@existdb/gulp-exist')
 
 // override defaults
-var connectionOptions = {
+const connectionOptions = {
     basic_auth: {
         user: "admin",
         pass: "****************"
     }
 }
 
-var exClient = exist.createClient(connectionOptions)
+const exClient = exist.createClient(connectionOptions)
 
-var exist_config = {
+const exist_config = {
 	target: '/db/system/config/db/apps/myapp/data',
 	xqlOutputExt: 'json'
 };
@@ -247,10 +247,10 @@ Override the mime type used to store files in exist based on their extension.
 Extended by default:
 `{
     'application/xquery': ['xq', 'xql', 'xqm'],
-    'application/xml': ['xconf']
+    'application/xml': ['xconf', 'odd']
 }`
 
-Type: `Object{mimetype: [extensions]}`
+Type: `Object {mimetype: [extensions]}`
 
 ##### Example
 
@@ -266,14 +266,13 @@ exist.defineMimeTypes({ 'text/foo': ['bar'] })
 
 ```js
 
-var gulp = require('gulp'),
-    exist = require('gulp-exist'),
+const gulp = require('gulp'),
+    exist = require('@existdb/gulp-exist'),
     sass = require('gulp-sass'),
     watch = require('gulp-watch'),
     newer = require('gulp-newer');
 
-
-var exitClient = exist.createClient({ /* some configuration */});
+const exClient = exist.createClient({ /* some configuration */});
 
 // compile SCSS styles and put them into 'build/app/css'
 gulp.task('styles', function() {
@@ -292,8 +291,8 @@ gulp.task('copy', function() {
 
 gulp.task('deploy',  function() {
     return gulp.src('build/**/*', {base: 'build'})
-        .pipe(existClient.newer({target: "/db/apps/myapp"}))
-        .pipe(existClient.dest({target: "/db/apps/myapp"}));
+        .pipe(exClient.newer({target: "/db/apps/myapp"}))
+        .pipe(exClient.dest({target: "/db/apps/myapp"}));
 });
 
 gulp.task('watch-styles', function() {
@@ -319,11 +318,10 @@ gulp.task('watch', gulp.parallel('watch-styles', 'watch-copy', 'watch-deploy'));
 
 ### Make XAR Archive
 
-
 ```js
 
-var gulp = require('gulp'),
-    exist = require('gulp-exist'),
+const gulp = require('gulp'),
+    exist = require('@existdb/gulp-exist'),
     zip = require('gulp-zip')
 
 gulp.task('build', function{} {
@@ -331,16 +329,14 @@ gulp.task('build', function{} {
 });
 
 gulp.task('xar', gulp.series('build', function() {
-    var p = require('./package.json');
+    const p = require('./package.json');
 
     return gulp.src('build' + '**/*', {base: 'build'})
             .pipe(zip("papyri-" + p.version + ".xar"))
             .pipe(gulp.dest("."));
 }));
 
-
 ```
-
 
 ## Test
 
