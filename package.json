@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "fancy-log": "^1.3.2",
-    "gulp": "^4.0.0",
+    "gulp": "^4.0.2",
     "lodash.assign": "^4.2.0",
     "@existdb/node-exist": "^2.0.0",
     "plugin-error": "^1.0.1",
