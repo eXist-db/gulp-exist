@@ -39,7 +39,7 @@
   "devDependencies": {
     "semantic-release": "^15.13.12",
     "standard": "^12.0.1",
-    "tape": "^4.9.1"
+    "tape": "^4.10.2"
   },
   "dependencies": {
     "fancy-log": "^1.3.2",
