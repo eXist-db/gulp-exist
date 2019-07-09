@@ -188,6 +188,7 @@ Default: `true`
 ##### xqlOutputExt
 
 The filename extension that will be used for XQuery result files emitted by ```exist.query()```.
+Possible values: 'xml' or 'json'.
 
 Type: `string`
 Default: `'xml'`
@@ -197,6 +198,7 @@ Default: `'xml'`
 Upload a collection index configuration file and re-index the collection
 
 *```scripts/reindex.xql```*
+
 ```xquery
 xquery version "3.1";
 declare option exist:serialize "method=json media-type=text/javascript";
@@ -206,6 +208,7 @@ declare option exist:serialize "method=json media-type=text/javascript";
 ```
 
 *```gulpfile.js```*
+
 ```js
 const gulp = require('gulp'),
     exist = require('@existdb/gulp-exist')
@@ -243,6 +246,7 @@ gulp.task('reindex', ['upload-index-conf'], function() {
 
 Override the mime type used to store files in exist based on their extension.
 `defineMimeTypes` just exposes `mime.define()`.
+*NOTE:* attempt to redefine a registered **extension** will throw an error.
 
 Extended by default:
 `{
@@ -329,10 +333,10 @@ gulp.task('build', function{} {
 });
 
 gulp.task('xar', gulp.series('build', function() {
-    const p = require('./package.json');
+    const pkg = require('./package.json');
 
     return gulp.src('build' + '**/*', {base: 'build'})
-            .pipe(zip("papyri-" + p.version + ".xar"))
+            .pipe(zip(`${pkg.abbrev}-${pkg.version}.xar`))
             .pipe(gulp.dest("."));
 }));
 
