@@ -5,11 +5,31 @@ node_js:
   - "8"
   - "6"
 
+jobs:
+  include:
+    # Define the release stage that runs semantic-release
+    - stage: release
+      node_js: lts/*
+      # skip docker build and tests
+      script: skip
+      before_install: skip
+      before_script: skip
+      deploy:
+        on:
+          branch: master
+        provider: script
+        skip_cleanup: true
+        script:
+          - npx semantic-release
+
+services:
+  - docker
+
 env:
-  - EXIST_DB_VERSION=eXist-5.0.0-RC1
-  - EXIST_DB_VERSION=eXist-4.2.1
-  - EXIST_DB_VERSION=eXist-3.6.1
-  - EXIST_DB_VERSION=eXist-2.2
+  - img=existdb/existdb:latest
+  - img=existdb/existdb:release
+  # - img= existdb/existdb:4.5.0
+  - img=evolvedbinary/exist-db:eXist-3.6.1-minimal
 
 addons:
   apt:
@@ -20,32 +40,17 @@ notifications:
   email: false
 
 before_install:
-  - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
+  - docker pull $img
+  - docker create  --name exist-ci -p 8080:8080 $img
+  - npm prune
 
 install:
-  - ci/setup.sh
   - npm install -q
 
 before_script:
-  - nohup ${HOME}/exist/${EXIST_DB_VERSION}/bin/startup.sh &
-  - npm prune
-  - curl -Lo travis_after_all.py https://git.io/vLSON
+  - docker start exist-ci
+  # exist needs time
   - sleep 30
-  - curl http://127.0.0.1:8080/exist
 
 script:
   - npm test
-
-after_success:
-  - python travis_after_all.py
-  - npm run semantic-release
-
-after_script:
-  - $HOME/exist/${EXIST_DB_VERSION}/bin/shutdown.sh
-
-before_cache:
-  - ci/teardown.sh
-
-cache:
-  directories:
-    - ${HOME}/exist
