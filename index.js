@@ -204,7 +204,7 @@ function checkForNewerWith (client) {
 
       client.resources.describe(normalizePath(conf.target + '/' + file.relative))
         .then(function (resourceInfo) {
-          const newer = !resourceInfo.hasOwnProperty('modified') || (Date.parse(file.stat.mtime) > Date.parse(resourceInfo.modified))
+          const newer = Object.prototype.hasOwnProperty.call(!resourceInfo, 'modified') || (Date.parse(file.stat.mtime) > Date.parse(resourceInfo.modified))
           callback(null, newer ? file : null)
         })
         .catch(function (e) {
