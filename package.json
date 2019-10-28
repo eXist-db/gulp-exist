@@ -29,6 +29,10 @@
     {
       "name": "Juri Leino",
       "email": "npm@line-o.de"
+    },
+    {
+      "name": "Duncan Paterson",
+      "email": "duncan@exist-db.org"
     }
   ],
   "license": "MIT",
