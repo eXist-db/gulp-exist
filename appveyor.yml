@@ -4,8 +4,8 @@ environment:
   NODE_VERSION: 8
 
   matrix:
-  - EXIST_VERSION: 5.0.0-RC1
-  - EXIST_VERSION: 4.2.1
+  - EXIST_VERSION: 5.0.0-RC4
+  - EXIST_VERSION: 4.7.1
   - EXIST_VERSION: 3.6.1
   - EXIST_VERSION: 2.2
 

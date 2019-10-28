@@ -1,9 +1,13 @@
 language: node_js
 
 node_js:
+  - "12"
   - "10"
   - "8"
   - "6"
+
+jdk:
+  - openjdk8
 
 jobs:
   include:
@@ -30,11 +34,6 @@ env:
   - img=existdb/existdb:release
   - img=existdb/existdb:4.7.1
   - img=evolvedbinary/exist-db:eXist-3.6.1-minimal
-
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
 
 notifications:
   email: false
