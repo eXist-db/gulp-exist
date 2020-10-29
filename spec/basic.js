@@ -1,14 +1,22 @@
 const test = require('tape')
 const gulpExist = require('../index')
 
-test('check for default mime type extensions', function (t) {
-  t.equals(gulpExist.getMimeType('test.xq'), 'application/xquery')
-  t.equals(gulpExist.getMimeType('test.xqs'), 'application/xquery')
-  t.equals(gulpExist.getMimeType('test.xql'), 'application/xquery')
-  t.equals(gulpExist.getMimeType('test.xqm'), 'application/xquery')
-  t.equals(gulpExist.getMimeType('test.xquery'), 'application/xquery')
-  t.equals(gulpExist.getMimeType('test.xconf'), 'application/xml')
-  t.equals(gulpExist.getMimeType('test.odd'), 'application/xml')
+const XQExtensions = ['xq', 'xqs', 'xql', 'xqm', 'xquery']
+const XMLExtensions = ['xconf', 'odd']
+
+test('check registered xquery file extensions', function (t) {
+  for (const index in XQExtensions) {
+    const extension = XQExtensions[index]
+    t.equals(gulpExist.getMimeType('test.' + extension), 'application/xquery', extension + ' checked')
+  }
+  t.end()
+})
+
+test('check registered XML file extensions', function (t) {
+  for (const index in XMLExtensions) {
+    const extension = XMLExtensions[index]
+    t.equals(gulpExist.getMimeType('test.' + extension), 'application/xml', extension + ' checked')
+  }
   t.end()
 })
 
@@ -25,7 +33,7 @@ test('create connection with default settings', function (t) {
   t.equals(typeof testClient.newer, 'function')
   t.end()
 })
-  
+
 test('check-user-permission', function (t) {
   t.skip('not implemented yet')
   t.end()

@@ -8,7 +8,6 @@ const srcOptions = { cwd: 'spec/files' }
 
 const targetCollection = '/tmp'
 
-
 test('run query, expect XML', function (t) {
   const testClient = gulpExist.createClient(connectionOptions)
   return gulp.src('test.xql', srcOptions)

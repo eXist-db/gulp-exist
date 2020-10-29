@@ -8,7 +8,7 @@ const srcOptions = { cwd: 'spec/files' }
 const targetCollection = '/tmp'
 
 const connectionOptions = require('./dbconnection')
-  
+
 // well formed xml
 test('well-formed-xml', function (t) {
   const testClient = gulpExist.createClient(connectionOptions)
