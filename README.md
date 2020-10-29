@@ -10,7 +10,6 @@
 `gulp deploy` will store all files in the ```build``` directory to
 **/db/apps/myapp** collection in eXist.
 
-
 ```js
 const gulp = require('gulp'),
     exist = require('@existdb/gulp-exist')
@@ -19,17 +18,19 @@ const gulp = require('gulp'),
 const connectionOptions = {
     basic_auth: {
         user: "admin",
-        pass: "****************"
+        pass: ""
     }
 }
 
 const exClient = exist.createClient(connectionOptions)
 
-// send all
-gulp.task('deploy', function() {
+// deploy all
+function deploy () {
     return gulp.src('**/*', {cwd: 'build'})
-        .pipe(exClient.dest({target: '/db/apps/myapp/'});
-})
+        .pipe(exClient.dest({target: '/db/apps/myapp/'})
+}
+
+exports.default = deploy
 ```
 
 NOTE: Non-existing collections and sub-folders will be created automatically.
@@ -67,14 +68,26 @@ Default: `'/exist/xmlrpc'`
 
 ##### basic_auth
 
-*Required*
+The credentials used to authenticate requests.
+What you can and cannot do depends on the permissions
+this user has.
+
 Type: `Object`
 Default: ```{ user: 'guest', pass: 'guest' }```
+
+##### secure
+
+Use HTTPS to connect to the database instance.
+Needs a valid certificate installed in the keystore of
+exist.
+
+Type: `Boolean`
+Default: `false`
 
 #### Example
 
 ```js
-var exClient = exist.createClient()
+const exClient = exist.createClient()
 ```
 
 ### existClient.dest(options)
@@ -120,15 +133,28 @@ Default: `{}`
 #### Example
 
 ```js
+const gulp = require('gulp'),
+    exist = require('@existdb/gulp-exist')
+
+// override defaults
+const connectionOptions = {
+    basic_auth: {
+        user: 'admin',
+        pass: ''
+    }
+}
+
 const exClient = exist.createClient(connectionOptions)
 
-gulp.task('deploy', function() {
-    return gulp.src('**/*', {cwd: 'build'})
+function deployWithPermissions () {
+    return gulp.src('**/*', {cwd: '.'})
         .pipe(exClient.dest({
             target: '/db/apps/myapp/',
             permissions: { 'controller.xql': 'rwxr-xr-x' }
-        });
-})
+        }))
+}
+
+exports.default = deployWithPermissions
 ```
 
 ### existClient.newer(options)
@@ -153,7 +179,7 @@ const gulp = require('gulp'),
 const connectionOptions = {
     basic_auth: {
         user: 'admin',
-        pass: '****************'
+        pass: ''
     }
 }
 
@@ -163,11 +189,13 @@ const targetOptions = {
     html5AsBinary: true         // upload HTML5 templates as binary
 }
 
-gulp.task('deploy', function() {
-	return gulp.src('**/*', {cwd: 'build'})
+function deployNewer () {
+	return gulp.src('**/*', {cwd: '.'})
 		.pipe(exClient.newer(targetOptions))
 		.pipe(exClient.dest(targetOptions));
-});
+}
+
+exports.default = deployNewer
 ```
 
 ### existClient.query(options)
@@ -197,7 +225,7 @@ Default: `'xml'`
 
 Upload a collection index configuration file and re-index the collection
 
-*```scripts/reindex.xql```*
+*```scripts/reindex.xq```*
 
 ```xquery
 xquery version "3.1";
@@ -217,29 +245,32 @@ const gulp = require('gulp'),
 const connectionOptions = {
     basic_auth: {
         user: "admin",
-        pass: "****************"
+        pass: ""
     }
 }
 
 const exClient = exist.createClient(connectionOptions)
 
-const exist_config = {
-	target: '/db/system/config/db/apps/myapp/data',
+const queryConfig = {
+	target: '/db/apps/myapp',
 	xqlOutputExt: 'json'
-};
+}
 
-gulp.task('upload-index-conf', function() {
+function deployCollectionXConf () {
 	return gulp.src('collection.xconf', {cwd: '.'})
-		.pipe(exClient.dest(exist_config));
-});
+		.pipe(exClient.dest({
+            target: '/db/system/config/db/apps/myapp/data'
+        }))
+}
 
-gulp.task('reindex', ['upload-index-conf'], function() {
-	return gulp.src('scripts/reindex.xql')
-		.pipe(exClient.query(exist_config))
+// optional store the query result locally in logs
+function reindex () {
+	return gulp.src('scripts/reindex.xq', {cwd: '.'})
+		.pipe(exClient.query(queryConfig))
+        .pipe(gulp.dest('logs')) 
+}
 
-		// optional: store the query result locally in 'logs'
-		.pipe(gulp.dest('logs'));
-});
+exports.default = gulp.series(deployCollectionXConf, reindex)
 ```
 
 ## Define Custom Mime Types
@@ -250,7 +281,7 @@ Override the mime type used to store files in exist based on their extension.
 
 Extended by default:
 `{
-    'application/xquery': ['xq', 'xql', 'xqm'],
+    'application/xquery': ['xq', 'xquery', 'xqs', 'xql', 'xqm'],
     'application/xml': ['xconf', 'odd']
 }`
 
