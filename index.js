@@ -8,9 +8,18 @@ const File = require('vinyl')
 const Path = require('path')
 const exist = require('@existdb/node-exist')
 
+/**
+ * NOTE: gulp-exist will still default to HTTP!
+ *
+ * But if your existdb instance has a proper certificate,
+ * you can now switch to HTTPS.
+ * Set "secure" to true and the "port" to 8443 (the port
+ * configured to serve HTTPS may differ in your installation)
+ */
 const defaultRPCoptions = {
   host: 'localhost',
   port: '8080',
+  secure: false,
   path: '/exist/xmlrpc',
   basic_auth: {
     user: 'guest',
