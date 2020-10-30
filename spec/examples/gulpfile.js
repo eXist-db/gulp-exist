@@ -150,18 +150,18 @@ function watchEs () {
 }
 exports["watch:es"] = watchEs
 
-const static = 'src/**/*.{xml,html,xq,xquery,xql,xqm,xsl,xconf}'
+const staticGlob = 'src/**/*.{xml,html,xq,xquery,xql,xqm,xsl,xconf}'
 
 /**
  * copy html templates, XSL stylesheet, XMLs and XQueries to 'build'
  */
 function copyStatic () {
-    return src(static).pipe(dest('build'))
+    return src(staticGlob).pipe(dest('build'))
 }
 exports.copy = copyStatic
 
 function watchStatic () {
-    watch(static, series(copyStatic));
+    watch(staticGlob, series(copyStatic));
 }
 exports["watch:static"] = watchStatic
 
