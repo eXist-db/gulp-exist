@@ -73,7 +73,10 @@ What you can and cannot do depends on the permissions
 this user has.
 
 Type: `Object`
-Default: ```{ user: 'guest', pass: 'guest' }```
+Default: 
+```js
+{ user: 'guest', pass: 'guest' }
+```
 
 ##### secure
 
@@ -87,7 +90,12 @@ Default: `false`
 #### Example
 
 ```js
-const exClient = exist.createClient()
+const exClient = exist.createClient({
+    host: "my.server",
+    secure: true,
+    port: 443,
+    basic_auth: { user: "app", pass: "1 handmade eclectic eclaire" }
+})
 ```
 
 ### existClient.dest(options)
@@ -133,22 +141,20 @@ Default: `{}`
 #### Example
 
 ```js
-const gulp = require('gulp'),
-    exist = require('@existdb/gulp-exist')
+const { src } = require('gulp')
+const { createClient } = require('@existdb/gulp-exist')
 
 // override defaults
-const connectionOptions = {
+const exist = createClient({
     basic_auth: {
         user: 'admin',
         pass: ''
     }
-}
-
-const exClient = exist.createClient(connectionOptions)
+})
 
 function deployWithPermissions () {
-    return gulp.src('**/*', {cwd: '.'})
-        .pipe(exClient.dest({
+    return src('**/*', {cwd: '.'})
+        .pipe(exist.dest({
             target: '/db/apps/myapp/',
             permissions: { 'controller.xql': 'rwxr-xr-x' }
         }))
@@ -172,27 +178,25 @@ Which collection to compare the local files to.
 Only upload modified files.
 
 ```js
-const gulp = require('gulp'),
-    exist = require('@existdb/gulp-exist')
+const { src } = require('gulp')
+const { createClient } = require('@existdb/gulp-exist')
 
-// override defaults
-const connectionOptions = {
+// override some default connection options
+const exist = createClient({
     basic_auth: {
         user: 'admin',
         pass: ''
     }
-}
+})
 
-const exClient = exist.createClient(connectionOptions)
-const targetOptions = {
-    target: '/db/apps/myapp/',  // the collection to write
-    html5AsBinary: true         // upload HTML5 templates as binary
-}
+const target = '/db/apps/myapp/'  // the collection to write to
+const html5AsBinary = true        // upload HTML5 templates as binary
+
 
 function deployNewer () {
-	return gulp.src('**/*', {cwd: '.'})
-		.pipe(exClient.newer(targetOptions))
-		.pipe(exClient.dest(targetOptions));
+	return src('**/*', {cwd: '.'})
+		.pipe(exist.newer({target}))
+		.pipe(exist.dest({target, html5AsBinary}));
 }
 
 exports.default = deployNewer
@@ -230,26 +234,23 @@ Upload a collection index configuration file and re-index the collection
 ```xquery
 xquery version "3.1";
 declare option exist:serialize "method=json media-type=text/javascript";
-<result>
-	<success>{xmldb:reindex('/db/apps/myapp/data')}</success>
-</result>
+
+map { "success": xmldb:reindex('/db/apps/myapp/data') }
 ```
 
 *```gulpfile.js```*
 
 ```js
-const gulp = require('gulp'),
-    exist = require('@existdb/gulp-exist')
+const { src, dest } = require('gulp')
+const { createClient } = require('@existdb/gulp-exist')
 
-// override defaults
-const connectionOptions = {
+// override some default connection options
+const exist = createClient({
     basic_auth: {
         user: "admin",
         pass: ""
     }
-}
-
-const exClient = exist.createClient(connectionOptions)
+})
 
 const queryConfig = {
 	target: '/db/apps/myapp',
@@ -257,20 +258,19 @@ const queryConfig = {
 }
 
 function deployCollectionXConf () {
-	return gulp.src('collection.xconf', {cwd: '.'})
-		.pipe(exClient.dest({
-            target: '/db/system/config/db/apps/myapp/data'
+	return src('collection.xconf', {cwd: '.'})
+		.pipe(exist.dest({
+            target: `/db/system/config${queryConfig.target}`
         }))
 }
 
-// optional store the query result locally in logs
 function reindex () {
-	return gulp.src('scripts/reindex.xq', {cwd: '.'})
-		.pipe(exClient.query(queryConfig))
-        .pipe(gulp.dest('logs')) 
+	return src('scripts/reindex.xq', {cwd: '.'})
+		.pipe(exist.query(queryConfig))
+        .pipe(dest('logs'))
 }
 
-exports.default = gulp.series(deployCollectionXConf, reindex)
+exports.default = series(deployCollectionXConf, reindex)
 ```
 
 ## Define Custom Mime Types
@@ -280,10 +280,12 @@ Override the mime type used to store files in exist based on their extension.
 *NOTE:* attempt to redefine a registered **extension** will throw an error.
 
 Extended by default:
-`{
+```js
+{
     'application/xquery': ['xq', 'xquery', 'xqs', 'xql', 'xqm'],
     'application/xml': ['xconf', 'odd']
-}`
+}
+```
 
 Type: `Object {mimetype: [extensions]}`
 
@@ -295,82 +297,63 @@ exist.defineMimeTypes({ 'text/foo': ['bar'] })
 
 ## More examples
 
-### Watch
+Have a look at the [example gulpfile](https://github.com/eXist-db/gulp-exist/tree/master/spec/examples/gulpfile.js)
 
-```gulp watch``` will automatically upload files on change
+### Watch File Changes
+
+`watch` will report when a file has changed. `deployBuild` will run
+each time that happens uploading all files that have changed since its
+last execution.
 
 ```js
+const { watch, src, dest, lastRun } = require('gulp')
 
-const gulp = require('gulp'),
-    exist = require('@existdb/gulp-exist'),
-    sass = require('gulp-sass'),
-    watch = require('gulp-watch'),
-    newer = require('gulp-newer');
+// override defaults
+const connectionOptions = {
+    basic_auth: {
+        user: "admin",
+        pass: ""
+    }
+}
 
-const exClient = exist.createClient({ /* some configuration */});
+const exClient = exist.createClient(connectionOptions)
 
-// compile SCSS styles and put them into 'build/app/css'
-gulp.task('styles', function() {
-    return gulp.src('app/scss/**/*.scss')
-        .pipe(sass().on('error', sass.logError))
-        .pipe(gulp.dest('build/app/css'));
-});
+function deployBuild () {
+    return src('build/**/*', {
+            base: 'build',
+            since: lastRun(deployBuild) 
+        })
+        .pipe(exClient.dest({target}))
+}
 
-// copy html templates, XMLs and XQuerys to 'build'
-gulp.task('copy', function() {
-    return gulp.src('app/**/*.{xml,html,xql,xqm,xsl,rng}')
-            .pipe(newer('build'))
-            .pipe(gulp.dest('build'))
-});
+exports.deploy = deployBuild
 
+function watchBuild () {
+    watch('build/**/*', series(deployBuild));
+}
+exports.watch = watchBuild
 
-gulp.task('deploy',  function() {
-    return gulp.src('build/**/*', {base: 'build'})
-        .pipe(exClient.newer({target: "/db/apps/myapp"}))
-        .pipe(exClient.dest({target: "/db/apps/myapp"}));
-});
-
-gulp.task('watch-styles', function() {
-    gulp.watch('app/scss/**/*.scss', gulp.series('styles'))
-});
-
-gulp.task('watch-copy', function() {
-    gulp.watch([
-                'app/js/**/*',
-                'app/imgs/**/*',
-                'app/**/*.{xml,html,xql,xqm,xsl}'
-                ],  
-                gulp.series('copy'));
-});
-
-gulp.task('watch-deploy', function() {
-    gulp.watch('build/**/*', gulp.series('deploy'));
-});
-
-gulp.task('watch', gulp.parallel('watch-styles', 'watch-copy', 'watch-deploy'));
-
+exports.default = series(deployBuild, watchDeploy)
 ```
 
 ### Make XAR Archive
 
 ```js
+const { src, dest } = require('gulp'),
+    zip = require('gulp-zip'),
+    pkg = require('./package.json')
 
-const gulp = require('gulp'),
-    exist = require('@existdb/gulp-exist'),
-    zip = require('gulp-zip')
-
-gulp.task('build', function{} {
+function build {
     // compile everything into the 'build' directory
-});
+}
 
-gulp.task('xar', gulp.series('build', function() {
-    const pkg = require('./package.json');
-
-    return gulp.src('build' + '**/*', {base: 'build'})
+function xar () {
+    return src('build/**/*', {base: 'build'})
             .pipe(zip(`${pkg.abbrev}-${pkg.version}.xar`))
-            .pipe(gulp.dest("."));
-}));
+            .pipe(dest("."));
+}
 
+exports.default = series(build, xar)
 ```
 
 ## Test
