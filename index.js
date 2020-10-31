@@ -8,9 +8,18 @@ const File = require('vinyl')
 const Path = require('path')
 const exist = require('@existdb/node-exist')
 
+/**
+ * NOTE: gulp-exist will still default to HTTP!
+ *
+ * But if your existdb instance has a proper certificate,
+ * you can now switch to HTTPS.
+ * Set "secure" to true and the "port" to 8443 (the port
+ * configured to serve HTTPS may differ in your installation)
+ */
 const defaultRPCoptions = {
   host: 'localhost',
   port: '8080',
+  secure: false,
   path: '/exist/xmlrpc',
   basic_auth: {
     user: 'guest',
@@ -47,7 +56,8 @@ function createCollection (client, collection) {
 
 module.exports.createClient = function createClient (options) {
   // TODO sanity checks
-  const client = exist.connect(assign({}, defaultRPCoptions, options))
+  const _options = assign({}, defaultRPCoptions, options)
+  const client = exist.connect(_options)
   return {
     dest: sendFilesWith(client),
     query: queryWith(client),
@@ -74,9 +84,8 @@ function sendFilesWith (client) {
 
       if (vf.isDirectory()) {
         return createCollection(client, normalizePath(conf.target + '/' + vf.relative))
-          .then(function (result) {
-            callback()
-          })
+          .then(_ => callback())
+          .catch(e => callback(e))
       }
 
       if (vf.isNull()) {
@@ -97,8 +106,13 @@ function sendFilesWith (client) {
 
       // create target collection if neccessary
       return client.collections.describe(collection)
-        .then(null, function () {
-          return createCollection(client, collection)
+        .then(null, function (e) {
+          if (e.faultString) {
+            log(`collection ${collection} not found`)
+            return createCollection(client, collection)
+          }
+          // server may be down, unreachable or misconfigured
+          return Promise.reject(e)
         })
 
         // then upload file
@@ -139,7 +153,14 @@ function sendFilesWith (client) {
           return callback(null, file)
         })
         .catch(function (error) {
-          log(' ✖ ' + remotePath + ' was not stored')
+          let errorMessage
+          if (isSaxParserError(error)) {
+            // Failed to invoke method parseLocal in class org.exist.xmlrpc.RpcConnection: org.xml.sax.SAXException:
+            errorMessage = error.faultString.split('\n')[0].substring(102)
+          } else {
+            errorMessage = error.message
+          }
+          log.error(' ✖ ' + remotePath + ' was not stored. Reason:', errorMessage)
           return callback(error)
         })
     }
