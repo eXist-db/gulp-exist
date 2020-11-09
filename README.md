@@ -162,6 +162,40 @@ function deployWithPermissions () {
 
 exports.default = deployWithPermissions
 ```
+### existClient.install(options)
+
+#### Options
+
+##### packageUri
+
+The unique package descriptor of the application to be installed.
+
+##### customPackageRepoUrl
+
+The application repository that will be used to resolve dependencies.
+Only needs to be set if the default repository cannot be used.
+
+#### Example
+
+```js
+const { src } = require('gulp')
+const { createClient } = require('@existdb/gulp-exist')
+
+// override defaults
+const exist = createClient({
+    basic_auth: {
+        user: 'admin',
+        pass: ''
+    }
+})
+// this MUST be the unique package identifier of the XAR you want to install 
+const packageUri = 'http://exist-db.org/apps/test-app'
+
+function install () {
+    return src('spec/files/test-app.xar')
+        .pipe(exist.install({ packageUri }))
+}
+```
 
 ### existClient.newer(options)
 
@@ -307,6 +341,7 @@ last execution.
 
 ```js
 const { watch, src, dest, lastRun } = require('gulp')
+const { createClient } = require('@existdb/gulp-exist')
 
 // override defaults
 const connectionOptions = {
@@ -316,14 +351,14 @@ const connectionOptions = {
     }
 }
 
-const exClient = exist.createClient(connectionOptions)
+const exist = createClient(connectionOptions)
 
 function deployBuild () {
     return src('build/**/*', {
             base: 'build',
             since: lastRun(deployBuild) 
         })
-        .pipe(exClient.dest({target}))
+        .pipe(exist.dest({target}))
 }
 
 exports.deploy = deployBuild
@@ -336,12 +371,21 @@ exports.watch = watchBuild
 exports.default = series(deployBuild, watchDeploy)
 ```
 
-### Make XAR Archive
+### Create and Install XAR Archive
 
 ```js
 const { src, dest } = require('gulp'),
     zip = require('gulp-zip'),
-    pkg = require('./package.json')
+    pkg = require('./package.json'),
+    { createClient } = require('@existdb/gulp-exist')
+
+// override some default connection options
+const exist = createClient({
+    basic_auth: {
+        user: "admin",
+        pass: ""
+    }
+})
 
 function build {
     // compile everything into the 'build' directory
@@ -353,7 +397,12 @@ function xar () {
             .pipe(dest("."));
 }
 
-exports.default = series(build, xar)
+function install () {
+    return src(`${pkg.abbrev}-${pkg.version}.xar`)
+      .pipe(exist.install({packageUri: "http://myapp"}))
+}
+
+exports.default = series(build, xar, install)
 ```
 
 ## Test
