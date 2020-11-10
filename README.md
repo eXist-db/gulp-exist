@@ -5,16 +5,30 @@
 
 > A gulp plugin to deploy to and query an eXist-db using eXist's XML-RPC API.
 
+## Prerequisites
+
+In order to make use of `gulp-exist` you will need to have 
+[gulp](https://gulpjs.com/docs/en/getting-started/quick-start) installed (in version 4 or later).
+
+And a running [existdb](https://exist-db.org) instance, of course (version 4.7.1 or higher recommended).
+
+## Installation
+
+In your project folder run
+
+```sh
+npm install --save-dev gulp @existdb/gulp-exist
+```
+
 ## Usage
 
-`gulp deploy` will store all files in the ```build``` directory to
-**/db/apps/myapp** collection in eXist.
+Then create a file with the name `gulpfile.js` in the root of your project with the following contents
 
 ```js
 const gulp = require('gulp'),
     exist = require('@existdb/gulp-exist')
 
-// authenticate against eXist
+// authenticate against local eXist instance for development 
 const connectionOptions = {
     basic_auth: {
         user: "admin",
@@ -33,7 +47,16 @@ function deploy () {
 exports.default = deploy
 ```
 
-NOTE: Non-existing collections and sub-folders will be created automatically.
+Now, `gulp deploy` will store all files in the `build` directory to
+**/db/apps/myapp** collection in eXist.
+
+Also note, that non-existing collections and sub-folders will be created
+automatically for you.
+
+Have a look at the [example gulpfile](https://github.com/eXist-db/gulp-exist/tree/master/spec/examples/gulpfile.js)
+for a more complete gulpfile offering more advanced tasks.
+
+## API
 
 ### exist.createClient(options)
 
@@ -162,6 +185,40 @@ function deployWithPermissions () {
 
 exports.default = deployWithPermissions
 ```
+### existClient.install(options)
+
+#### Options
+
+##### packageUri
+
+The unique package descriptor of the application to be installed.
+
+##### customPackageRepoUrl
+
+The application repository that will be used to resolve dependencies.
+Only needs to be set if the default repository cannot be used.
+
+#### Example
+
+```js
+const { src } = require('gulp')
+const { createClient } = require('@existdb/gulp-exist')
+
+// override defaults
+const exist = createClient({
+    basic_auth: {
+        user: 'admin',
+        pass: ''
+    }
+})
+// this MUST be the unique package identifier of the XAR you want to install 
+const packageUri = 'http://exist-db.org/apps/test-app'
+
+function install () {
+    return src('spec/files/test-app.xar')
+        .pipe(exist.install({ packageUri }))
+}
+```
 
 ### existClient.newer(options)
 
@@ -206,7 +263,13 @@ exports.default = deployNewer
 
 Execute input files as XQuery on the server.
 
-The input files will not be stored in eXist but read locally and executed directly. The query results will be logged in the console (can be disabled by setting ```printXqlResults``` to ```false```). For each input file, the result of the query will also be emitted as an output file that can optionally be copied into a local directory for logging. Timestamps will be appended to the filename. The filename extension of the output files can be controlled with ```xqlOutputExt``` (default is ```xml```).
+The input files will not be stored in eXist but read locally and executed 
+directly. The query results will be logged in the console (can be disabled by
+setting `printXqlResults` to `false`). For each input file, the result
+of the query will also be emitted as an output file that can optionally be
+copied into a local directory for logging. Timestamps will be appended to the
+filename. The filename extension of the output files can be controlled with
+`xqlOutputExt` (default is `xml`).
 
 #### Query options
 
@@ -219,8 +282,8 @@ Default: `true`
 
 ##### xqlOutputExt
 
-The filename extension that will be used for XQuery result files emitted by ```exist.query()```.
-Possible values: 'xml' or 'json'.
+The filename extension that will be used for XQuery result files emitted by
+`exist.query()`. Possible values are 'xml' or 'json'.
 
 Type: `string`
 Default: `'xml'`
@@ -229,7 +292,7 @@ Default: `'xml'`
 
 Upload a collection index configuration file and re-index the collection
 
-*```scripts/reindex.xq```*
+*scripts/reindex.xq*
 
 ```xquery
 xquery version "3.1";
@@ -238,7 +301,7 @@ declare option exist:serialize "method=json media-type=text/javascript";
 map { "success": xmldb:reindex('/db/apps/myapp/data') }
 ```
 
-*```gulpfile.js```*
+*gulpfile.js*
 
 ```js
 const { src, dest } = require('gulp')
@@ -297,7 +360,7 @@ exist.defineMimeTypes({ 'text/foo': ['bar'] })
 
 ## More examples
 
-Have a look at the [example gulpfile](https://github.com/eXist-db/gulp-exist/tree/master/spec/examples/gulpfile.js)
+Have a look at the [example gulpfile](https://github.com/eXist-db/gulp-exist/tree/master/spec/examples/gulpfile.js).
 
 ### Watch File Changes
 
@@ -307,6 +370,7 @@ last execution.
 
 ```js
 const { watch, src, dest, lastRun } = require('gulp')
+const { createClient } = require('@existdb/gulp-exist')
 
 // override defaults
 const connectionOptions = {
@@ -316,14 +380,14 @@ const connectionOptions = {
     }
 }
 
-const exClient = exist.createClient(connectionOptions)
+const exist = createClient(connectionOptions)
 
 function deployBuild () {
     return src('build/**/*', {
             base: 'build',
             since: lastRun(deployBuild) 
         })
-        .pipe(exClient.dest({target}))
+        .pipe(exist.dest({target}))
 }
 
 exports.deploy = deployBuild
@@ -336,12 +400,21 @@ exports.watch = watchBuild
 exports.default = series(deployBuild, watchDeploy)
 ```
 
-### Make XAR Archive
+### Create and Install XAR Archive
 
 ```js
 const { src, dest } = require('gulp'),
     zip = require('gulp-zip'),
-    pkg = require('./package.json')
+    pkg = require('./package.json'),
+    { createClient } = require('@existdb/gulp-exist')
+
+// override some default connection options
+const exist = createClient({
+    basic_auth: {
+        user: "admin",
+        pass: ""
+    }
+})
 
 function build {
     // compile everything into the 'build' directory
@@ -353,7 +426,12 @@ function xar () {
             .pipe(dest("."));
 }
 
-exports.default = series(build, xar)
+function install () {
+    return src(`${pkg.abbrev}-${pkg.version}.xar`)
+      .pipe(exist.install({packageUri: "http://myapp"}))
+}
+
+exports.default = series(build, xar, install)
 ```
 
 ## Test
