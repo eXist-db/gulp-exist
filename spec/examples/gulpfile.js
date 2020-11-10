@@ -2,7 +2,7 @@
  * an example gulpfile to make ant-less existdb package builds a reality
  */
 const { src, dest, watch, series, parallel, lastRun } = require('gulp')
-const { createClient } = require('../../index')
+const { createClient } = require('@existdb/gulp-exist')
 
 const del = require('delete')
 const zip = require('gulp-zip')
