@@ -4,7 +4,7 @@ environment:
   NODE_VERSION: 12
 
   matrix:
-  - EXIST_VERSION: 5.0.0-RC4
+  - EXIST_VERSION: 5.2.0
   - EXIST_VERSION: 4.7.1
 
 install:
