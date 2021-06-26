@@ -2,21 +2,24 @@ name: test node-exist
 
 on:
   pull_request:
-    branches: [ master, develop ]
+    branches: 
+      - master
 
   push:
     branches:
-      - develop
+      - master
 
   workflow_dispatch:
 
 jobs:
   build:
-      runs-on: ubuntu-latest
       strategy:
         matrix:
+          os: [ubuntu-latest, windows-latest]
           node-version: [10.x, 12.x, 14.x]
           docker-tag: [latest, release, 4.7.1]
+
+      runs-on: ${{ matrix.os }}
       steps:
       - uses: actions/checkout@v2
 
@@ -38,7 +41,7 @@ jobs:
         run: docker start exist-ci
 
       - name: Wait for existdb startup
-        run: sleep 30
+        run: sleep 20
 
       - name: npm test
         run: npm test
