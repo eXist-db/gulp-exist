@@ -281,7 +281,7 @@ function newer (client, options) {
 
 /**
  * @typedef {Object} GulpExistInstallationOptions
- * @prop {string} packageUri
+ * @prop {string} [packageUri] deprecated
  * @prop {string} [customPackageRepoUrl]
  */
 
@@ -293,9 +293,7 @@ function newer (client, options) {
  * @return {TransformFunction} install XAR from vinyl file stream
  */
 function install (client, options) {
-  if (!options || !options.packageUri) { return new PluginError('gulp-exist', 'packageUri must be declared') }
-  const packageUri = options.packageUri
-  const customPackageRepoUrl = options.customPackageRepoUrl || null
+  const customPackageRepoUrl = options && options.customPackageRepoUrl ? options.customPackageRepoUrl : null
 
   function installPackage (file, enc, callback) {
     const xarName = file.basename
@@ -310,8 +308,8 @@ function install (client, options) {
     client.app.upload(file.contents, xarName)
       .then(response => {
         if (!response.success) { return callback(new PluginError('gulp-exist', 'XAR was not uploaded')) }
-        log(`Install ${packageUri} from ${xarName}`)
-        return client.app.install(xarName, packageUri, customPackageRepoUrl)
+        log(`Install ${xarName}`)
+        return client.app.install(xarName, customPackageRepoUrl)
       })
       .then(response => {
         if (!response.success) { return callback(new PluginError('gulp-exist', 'XAR Installation failed')) }
