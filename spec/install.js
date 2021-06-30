@@ -19,7 +19,7 @@ test('install XAR package', function (t) {
   }
 
   return gulp.src('test-app.xar', { cwd: 'spec/files' })
-    .pipe(testClient.install({ packageUri }))
+    .pipe(testClient.install())
     .on('data', function (d) {
       t.plan(3)
       t.true(d.success, 'succeeded')

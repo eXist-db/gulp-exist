@@ -189,9 +189,12 @@ exports.default = deployWithPermissions
 
 #### Options
 
-##### packageUri
+##### packageUri (deprecated)
 
 The unique package descriptor of the application to be installed.
+
+**NOTE:** For versions after v4.0.2 this option is ignored and will be read 
+from the XAR itself.
 
 ##### customPackageRepoUrl
 
@@ -211,12 +214,10 @@ const exist = createClient({
         pass: ''
     }
 })
-// this MUST be the unique package identifier of the XAR you want to install 
-const packageUri = 'http://exist-db.org/apps/test-app'
 
 function install () {
     return src('spec/files/test-app.xar')
-        .pipe(exist.install({ packageUri }))
+        .pipe(exist.install())
 }
 ```
 
