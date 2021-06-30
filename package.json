@@ -44,7 +44,7 @@
     "@semantic-release/github": "^7.2.3",
     "semantic-release": "^17.4.4",
     "standard": "^16.0.3",
-    "tape": "^5.0.1"
+    "tape": "^5.2.2"
   },
   "dependencies": {
     "@existdb/node-exist": "^4.0.0",
