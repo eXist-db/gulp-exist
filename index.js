@@ -14,7 +14,7 @@ const PluginError = require('plugin-error')
 const assign = require('lodash.assign')
 const File = require('vinyl')
 const Path = require('path')
-const exist = require('@existdb/node-exist')
+const { connect, getMimeType, defineMimeTypes, readOptionsFromEnv } = require('@existdb/node-exist')
 
 /**
  * @typedef {Object} GulpExistConnectionOptions
@@ -147,13 +147,13 @@ function dest (client, options) {
 
       // then upload file
       .then(function (result) {
-        log('Storing "' + file.base + file.relative + '" as (' + exist.getMimeType(file.path) + ')...')
+        log('Storing "' + file.base + file.relative + '" as (' + getMimeType(file.path) + ')...')
         return client.documents.upload(file.contents)
       })
 
       // parse file on server
       .then(function (result) {
-        return client.documents.parseLocal(result, remotePath, { mimetype: exist.getMimeType(file.path) })
+        return client.documents.parseLocal(result, remotePath, { mimetype: getMimeType(file.path) })
       })
 
       // handle re-upload as octet stream if parsing failed and html5AsBinary is set
@@ -342,7 +342,7 @@ function install (client, options) {
 function createClient (options) {
   // TODO sanity checks
   const _options = assign({}, defaultRPCoptions, options)
-  const client = exist.connect(_options)
+  const client = connect(_options)
   return {
     dest: dest.bind(null, client),
     query: query.bind(null, client),
@@ -351,24 +351,9 @@ function createClient (options) {
   }
 }
 
-/**
- * define additional mapping of file extension to mimetype
- * will throw if already defined
- *
- * @param {Object<string,string>} mimeTypes
- */
-function defineMimeTypes (mimeTypes) {
-  exist.defineMimeTypes(mimeTypes)
+module.exports = {
+  createClient,
+  defineMimeTypes,
+  getMimeType,
+  readOptionsFromEnv
 }
-
-/**
- * returns the mimetype of a file
- *
- * @param {string} path
- * @returns {string}
- */
-function getMimeType (path) {
-  return exist.getMimeType(path)
-}
-
-module.exports = { createClient, defineMimeTypes, getMimeType }
