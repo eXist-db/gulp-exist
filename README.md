@@ -27,8 +27,8 @@ npm install --save-dev gulp @existdb/gulp-exist
 Then create a file with the name `gulpfile.js` in the root of your project with the following contents
 
 ```js
-const gulp = require('gulp'),
-    exist = require('@existdb/gulp-exist')
+const {src} = require('gulp'),
+    {createClient} = require('@existdb/gulp-exist')
 
 // authenticate against local eXist instance for development 
 const connectionOptions = {
@@ -38,12 +38,12 @@ const connectionOptions = {
     }
 }
 
-const exClient = exist.createClient(connectionOptions)
+const exClient = createClient(connectionOptions)
 
 // deploy all
 function deploy () {
-    return gulp.src('**/*', {cwd: 'build'})
-        .pipe(exClient.dest({target: '/db/apps/myapp/'})
+    return src('**/*', {cwd: 'build'})
+        .pipe(exClient.dest({target: '/db/apps/myapp/'}))
 }
 
 exports.default = deploy
@@ -59,6 +59,63 @@ Have a look at the [example gulpfile](https://github.com/eXist-db/gulp-exist/tre
 for a more complete gulpfile offering more advanced tasks.
 
 ## API
+
+### exist.readOptionsFromEnv()
+
+Read connection options from environment variables.
+Currently supported variables are listed in the table below.
+
+| variable name | default | description
+|----|----|----
+| `EXISTDB_USER` | _none_ | the user used to connect to the database and to execute queries with
+| `EXISTDB_PASS` | _none_ | the password to authenticate the user against the database
+| `EXISTDB_SERVER` | `https://localhost:8443` | the URL of the database instance to connect to (only http and https protocol allowed)
+
+#### Example
+
+With the below setup the connection is then controlled by the variables
+in the environment.  
+
+```js
+const {src} = require('gulp')
+const {createClient, readOptionsFromEnv} = require('@existdb/gulp-exist')
+const exClient = createClient(readOptionsFromEnv())
+
+// deploy all
+function deploy () {
+    return src('**/*', {cwd: 'build'})
+        .pipe(exClient.dest({target: '/db/apps/myapp/'}))
+}
+
+exports.default = deploy
+```
+
+```sh
+EXISTDB_SERVER=http://localhost:8080 \
+EXISTDB_USER=admin \
+EXISTDB_USER= \
+gulp deploy
+```
+
+The npm package [dotenv-cli](https://www.npmjs.com/package/dotenv-cli) offers a great way to read and set environment
+variables from files.
+
+```sh
+npm install -g dotenv-cli
+```
+
+Create a `.env` in your project root.
+
+```sh
+EXISTDB_SERVER=http://localhost:8080
+EXISTDB_USER=admin
+EXISTDB_PASS=
+```
+And then 
+
+```sh
+dotenv gulp deploy
+```
 
 ### exist.createClient(options)
 
@@ -441,9 +498,19 @@ exports.default = series(build, xar, install)
 
 ### Prerequisites
 
-A running instance of eXist-db v2.2+ at localhost port 8080 with an
+A running instance of eXist-db v2.2+ at localhost port 8443 with an
 admin user that has a blank password.
+
+You can override the above settings with environment variables (see [dbconnection.js](https://github.com/eXist-db/gulp-exist/tree/master/spec/dbconnection.js) for details).
 
 ### Run the Tests
 
-    npm test
+```sh
+npm test
+```
+
+[dotenv-cli](https://www.npmjs.com/package/dotenv-cli) can be used here, too:
+
+```sh
+dotenv npm test
+```
