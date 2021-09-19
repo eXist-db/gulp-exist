@@ -1,6 +1,8 @@
 # gulp-exist
 
-[![version](https://img.shields.io/npm/v/@existdb/gulp-exist.svg)](https://www.npmjs.com/package/@existdb/gulp-exist) [![travis-ci](https://api.travis-ci.com/eXist-db/gulp-exist.png)](https://travis-ci.com/eXist-db/gulp-exist) [![windows ci](https://ci.appveyor.com/api/projects/status/wcbi1e0yx47prhl6?svg=true)](https://ci.appveyor.com/project/olvidalo/gulp-exist)
+[![version](https://img.shields.io/npm/v/@existdb/gulp-exist.svg)](https://www.npmjs.com/package/@existdb/gulp-exist)
+![semantic release status](https://github.com/exist-db/gulp-exist/actions/workflows/semantic-release.yml/badge.svg)
+[![windows ci](https://ci.appveyor.com/api/projects/status/wcbi1e0yx47prhl6?svg=true)](https://ci.appveyor.com/project/olvidalo/gulp-exist)
 
 
 > A gulp plugin to deploy to and query an eXist-db using eXist's XML-RPC API.
