@@ -19,7 +19,7 @@ jobs:
       exist:
         image: existdb/existdb:${{ matrix.exist-version }}
         ports:
-          - 8080:8080
+          - 8443:8443
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
-      - run: EXISTDB_SERVER=http://localhost:8080 npm test
+      - run: npm test
   release:
     name: Release
     runs-on: ubuntu-latest

@@ -36,8 +36,8 @@ const { connect, getMimeType, defineMimeTypes, readOptionsFromEnv } = require('@
  */
 const defaultRPCoptions = {
   host: 'localhost',
-  port: '8080',
-  secure: false,
+  port: '8443',
+  secure: true,
   path: '/exist/xmlrpc',
   basic_auth: {
     user: 'guest',
