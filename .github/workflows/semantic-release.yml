@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
-      - run: npm test
+      - run: EXISTDB_SERVER=http://localhost:8080 npm test
   release:
     name: Release
     runs-on: ubuntu-latest
