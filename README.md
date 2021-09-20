@@ -139,7 +139,7 @@ Default: `'localhost'`
 ##### port
 
 Type: `number`
-Default: `8080`
+Default: `8443`
 
 ##### path
 
@@ -162,21 +162,36 @@ Default:
 
 ##### secure
 
-Use HTTPS to connect to the database instance.
-Needs a valid certificate installed in the keystore of
-exist.
+Use HTTPS (or HTTP) to connect to the database instance.
+
+**NOTE:** You need a valid certificate installed in the keystore of
+exist for connections to remote servers.
 
 Type: `Boolean`
-Default: `false`
+Default: `true`
 
 #### Example
 
+Connecting to a remote server using a secure connection.
+
 ```js
-const exClient = exist.createClient({
-    host: "my.server",
+const {createClient} = require('@existdb/gulp-exist')
+const exClient = createClient({
+    host: "my-server.tld",
     secure: true,
     port: 443,
     basic_auth: { user: "app", pass: "1 handmade eclectic eclaire" }
+})
+```
+
+Connecting to localhost server using a insecure connection.
+
+```js
+const {createClient} = require('@existdb/gulp-exist')
+const exClient = createClient({
+    host: "localhost",
+    secure: false,
+    port: 8080
 })
 ```
 
