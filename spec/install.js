@@ -1,6 +1,6 @@
 const test = require('tape')
 
-const gulp = require('gulp')
+const { src } = require('gulp')
 const { connect } = require('@existdb/node-exist')
 const { createClient } = require('../index')
 
@@ -18,7 +18,7 @@ test('install XAR package', function (t) {
       .catch(end)
   }
 
-  return gulp.src('test-app.xar', { cwd: 'spec/files' })
+  return src('test-app.xar', { cwd: 'spec/files' })
     .pipe(testClient.install())
     .on('data', function (d) {
       t.plan(3)

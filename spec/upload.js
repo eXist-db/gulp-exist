@@ -1,7 +1,7 @@
-const gulp = require('gulp')
+const { src } = require('gulp')
 const test = require('tape')
-const gulpExist = require('../index')
-const exist = require('@existdb/node-exist')
+const { createClient } = require('../index')
+const { connect } = require('@existdb/node-exist')
 
 const srcOptions = { cwd: 'spec/files' }
 
@@ -11,8 +11,8 @@ const connectionOptions = require('./dbconnection')
 
 // well formed xml
 test('well-formed-xml', function (t) {
-  const testClient = gulpExist.createClient(connectionOptions)
-  gulp.src('test.xml', srcOptions)
+  const testClient = createClient(connectionOptions)
+  src('test.xml', srcOptions)
     .pipe(testClient.dest({
       target: targetCollection
     }))
@@ -25,8 +25,8 @@ test('well-formed-xml', function (t) {
 
 // xquery file with permission changes
 test('xql-change-perms', function (t) {
-  const testClient = gulpExist.createClient(connectionOptions)
-  gulp.src('test.xql', srcOptions)
+  const testClient = createClient(connectionOptions)
+  src('test.xql', srcOptions)
     .pipe(testClient.dest({
       target: targetCollection,
       permissions: {
@@ -36,7 +36,7 @@ test('xql-change-perms', function (t) {
     .on('error', e => t.end(e))
     .on('finish', function () {
       t.pass('uploaded')
-      const db = exist.connect(connectionOptions)
+      const db = connect(connectionOptions)
       db.resources.getPermissions(targetCollection + '/test.xql')
         .then(function (result) {
           t.ok(result.permissions === 493, 'permissions correctly set')
@@ -48,8 +48,8 @@ test('xql-change-perms', function (t) {
 
 // upload HTML5 file without retry
 test('up-html5-no-retry', function (t) {
-  const testClient = gulpExist.createClient(connectionOptions)
-  gulp.src('test.html', srcOptions)
+  const testClient = createClient(connectionOptions)
+  src('test.html', srcOptions)
     .pipe(testClient.dest({
       target: targetCollection
     }))
@@ -59,8 +59,8 @@ test('up-html5-no-retry', function (t) {
 
 // upload HTML5 file with retry
 test('up-html5-with-retry', function (t) {
-  const testClient = gulpExist.createClient(connectionOptions)
-  gulp.src('test.html', srcOptions)
+  const testClient = createClient(connectionOptions)
+  src('test.html', srcOptions)
     .pipe(testClient.dest({
       target: targetCollection,
       html5AsBinary: true
@@ -73,8 +73,8 @@ test('up-html5-with-retry', function (t) {
 })
 
 test('non well formed XML will not be uploaded as binary', function (t) {
-  const testClient = gulpExist.createClient(connectionOptions)
-  gulp.src('invalid.xml', srcOptions)
+  const testClient = createClient(connectionOptions)
+  src('invalid.xml', srcOptions)
     .pipe(testClient.dest({
       target: targetCollection,
       html5AsBinary: true
@@ -85,9 +85,9 @@ test('non well formed XML will not be uploaded as binary', function (t) {
 
 // with newer (should not re-send any file)
 test('newer-no-resend', function (t) {
-  const testClient = gulpExist.createClient(connectionOptions)
+  const testClient = createClient(connectionOptions)
   let files = 0
-  gulp.src('test.*', srcOptions)
+  src('test.*', srcOptions)
     .pipe(testClient.newer({ target: targetCollection }))
     .on('data', function (c) {
       files += 1

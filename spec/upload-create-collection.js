@@ -1,7 +1,7 @@
-const gulp = require('gulp')
+const { src } = require('gulp')
 const test = require('tape')
-const gulpExist = require('../index')
-const exist = require('@existdb/node-exist')
+const { createClient } = require('../index')
+const { connect } = require('@existdb/node-exist')
 
 const srcOptions = { cwd: 'spec/files' }
 
@@ -10,7 +10,7 @@ const targetCollection = '/tmp'
 const connectionOptions = require('./dbconnection')
 
 function teardown (t) {
-  const db = exist.connect(connectionOptions)
+  const db = connect(connectionOptions)
   db.collections.remove(targetCollection)
     .then(_ => t.end())
     .catch(e => t.end(e))
@@ -19,7 +19,7 @@ function teardown (t) {
 async function checkContents (st) {
   st.plan(2)
   try {
-    const db = exist.connect(connectionOptions)
+    const db = connect(connectionOptions)
     await db.resources.describe(targetCollection + '/test.xml')
     st.pass('test.xql exists')
     await db.resources.describe(targetCollection + '/collection/test.xml')
@@ -32,11 +32,11 @@ async function checkContents (st) {
 
 // collections and resources are created and have the correct path
 test('create collections and resources (target has trailing slash)', function (t) {
-  const testClient = gulpExist.createClient(connectionOptions)
+  const testClient = createClient(connectionOptions)
   const trailingSlashTarget = targetCollection + '/'
 
   t.test('setup', function (st) {
-    gulp.src('**/test.xml', srcOptions)
+    src('**/test.xml', srcOptions)
       .pipe(testClient.dest({
         target: trailingSlashTarget
       }))
@@ -52,10 +52,10 @@ test('create collections and resources (target has trailing slash)', function (t
 })
 
 test('create collections and resources (target has trailing slash)', function (t) {
-  const testClient = gulpExist.createClient(connectionOptions)
+  const testClient = createClient(connectionOptions)
 
   t.test('setup', function (st) {
-    gulp.src('**/test.xml', srcOptions)
+    src('**/test.xml', srcOptions)
       .pipe(testClient.dest({
         target: targetCollection
       }))
