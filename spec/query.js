@@ -1,16 +1,16 @@
 // tests
 
-const gulp = require('gulp')
+const { src } = require('gulp')
 const test = require('tape')
-const gulpExist = require('../index')
+const { createClient } = require('../index')
 const connectionOptions = require('./dbconnection')
 const srcOptions = { cwd: 'spec/files' }
 
 const targetCollection = '/tmp'
 
 test('run query, expect XML', function (t) {
-  const testClient = gulpExist.createClient(connectionOptions)
-  return gulp.src('test.xql', srcOptions)
+  const testClient = createClient(connectionOptions)
+  return src('test.xql', srcOptions)
     .pipe(testClient.query({
       target: targetCollection,
       xqlOutputExt: 'xml'
@@ -28,8 +28,8 @@ test('run query, expect XML', function (t) {
 })
 
 test('run query, expect json', function (t) {
-  const testClient = gulpExist.createClient(connectionOptions)
-  return gulp.src('test.json.xql', srcOptions)
+  const testClient = createClient(connectionOptions)
+  return src('test.json.xql', srcOptions)
     .pipe(testClient.query({
       target: targetCollection,
       xqlOutputExt: 'json'
