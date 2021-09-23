@@ -93,7 +93,7 @@ exports.default = deploy
 ```sh
 EXISTDB_SERVER=http://localhost:8080 \
 EXISTDB_USER=admin \
-EXISTDB_USER= \
+EXISTDB_PASS= \
 gulp deploy
 ```
 
