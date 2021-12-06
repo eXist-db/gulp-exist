@@ -363,7 +363,16 @@ The filename extension that will be used for XQuery result files emitted by
 Type: `string`
 Default: `'xml'`
 
-#### Example
+##### queryParams
+
+Query params passed to the eXist-db XMLRPC API
+(https://exist-db.org/exist/apps/doc/devguide_xmlrpc). Can be used to pass
+query variables (see Example 2).
+
+Type: `Object`
+Default: `{}`
+
+#### Example 1
 
 Upload a collection index configuration file and re-index the collection
 
@@ -409,6 +418,48 @@ function reindex () {
 }
 
 exports.default = series(deployCollectionXConf, reindex)
+```
+
+#### Example 2
+
+Pass a variable to the XQuery script.
+
+*scripts/var.xq*
+
+```xquery
+<result>{ $someVariable }</result>
+```
+
+*gulpfile.js*
+
+```js
+const { src, dest } = require('gulp')
+const { createClient } = require('@existdb/gulp-exist')
+
+// override some default connection options
+const exist = createClient({
+    basic_auth: {
+        user: "admin",
+        pass: ""
+    }
+})
+
+// set `variables` query parameter
+const queryConfig = {
+	queryParams: {
+	    variables: {
+	        someVariable: "some value"
+	    }
+	}
+}
+
+function runQueryWithVarible () {
+	return src('scripts/var.xq', {cwd: '.'})
+		.pipe(exist.query(queryConfig))
+        .pipe(dest('logs'))
+}
+
+exports.default = runQueryWithVarible
 ```
 
 ## Define Custom Mime Types
