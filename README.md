@@ -453,7 +453,7 @@ const queryConfig = {
 	}
 }
 
-function runQueryWithVarible () {
+function runQueryWithVariable () {
 	return src('scripts/var.xq', {cwd: '.'})
 		.pipe(exist.query(queryConfig))
         .pipe(dest('logs'))
