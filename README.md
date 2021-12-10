@@ -427,6 +427,9 @@ Pass a variable to the XQuery script.
 *scripts/var.xq*
 
 ```xquery
+(: optionally declare the variable as external :)
+declare variable $someVariable external;
+
 <result>{ $someVariable }</result>
 ```
 
