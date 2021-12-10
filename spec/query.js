@@ -47,3 +47,25 @@ test('run query, expect json', function (t) {
     .on('error', e => t.fail(e))
     .on('finish', _ => t.end())
 })
+
+test('run query with variables', function (t) {
+  const testClient = createClient(connectionOptions)
+  return src('test-variables.xql', srcOptions)
+    .pipe(testClient.query({
+      target: targetCollection,
+      queryParams: {
+        variables: {
+          variable: 'test'
+        }
+      }
+    }))
+    .on('data', function (d) {
+      const contents = d.contents.toString()
+
+      // inspect the results
+      // result should be the string set by the variables object in the query params
+      t.equal(contents, 'test', 'variable has been set')
+    })
+    .on('error', e => t.fail(e))
+    .on('finish', _ => t.end())
+})

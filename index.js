@@ -70,6 +70,7 @@ const defaultUploadOptions = {
  * @typedef {Object} GulpExistQueryOptions
  * @prop {boolean} [printXqlResults] default: true
  * @prop {"xml"|"json"|string} xqlOutputExt the file extension the results are written to
+ * @prop {Object} queryParams query parameters passed to eXist-db
  */
 
 /**
@@ -77,7 +78,8 @@ const defaultUploadOptions = {
  */
 const defaultQueryOptions = {
   printXqlResults: true,
-  xqlOutputExt: 'xml'
+  xqlOutputExt: 'xml',
+  queryParams: {}
 }
 
 const isWin = os.platform() === 'win32'
@@ -223,7 +225,7 @@ function query (client, options) {
 
     log('Running XQuery on server: ' + file.relative)
 
-    client.queries.readAll(file.contents, {})
+    client.queries.readAll(file.contents, conf.queryParams)
       .then(function (result) {
         const resultBuffer = Buffer.concat(result.pages)
         if (conf.printXqlResults) {
