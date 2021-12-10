@@ -53,7 +53,6 @@ test('run query with variables', function (t) {
   return src('test-variables.xql', srcOptions)
     .pipe(testClient.query({
       target: targetCollection,
-      xqlOutputExt: 'json',
       queryParams: {
         variables: {
           variable: 'test'
@@ -61,10 +60,11 @@ test('run query with variables', function (t) {
       }
     }))
     .on('data', function (d) {
-      const parsedContents = JSON.parse(d.contents)
+      const contents = d.contents.toString()
+
       // inspect the results
       // result should be the string set by the variables object in the query params
-      t.equal(parsedContents, 'test', 'variable has been set')
+      t.equal(contents, 'test', 'variable has been set')
     })
     .on('error', e => t.fail(e))
     .on('finish', _ => t.end())
