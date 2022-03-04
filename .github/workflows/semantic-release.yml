@@ -21,7 +21,7 @@ jobs:
         ports:
           - 8443:8443
         volumes:
-          - ${{ github.workspace }}/xquery:/exist/autodeploy
+          - ${{ github.workspace }}/empty:/exist/autodeploy
         options: >-
           --health-interval 4s
     steps:
