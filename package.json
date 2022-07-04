@@ -51,7 +51,7 @@
     "fancy-log": "^2.0.0",
     "gulp": "^4.0.2",
     "lodash.assign": "^4.2.0",
-    "plugin-error": "^1.0.1",
+    "plugin-error": "^2.0.0",
     "through2": "^4.0.2",
     "vinyl": "^2.2.1"
   },
