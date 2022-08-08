@@ -47,7 +47,7 @@
     "tape": "^5.5.3"
   },
   "dependencies": {
-    "@existdb/node-exist": "^4.9.2",
+    "@existdb/node-exist": "^5.0.1",
     "fancy-log": "^2.0.0",
     "gulp": "^4.0.2",
     "lodash.assign": "^4.2.0",
