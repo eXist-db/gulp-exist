@@ -3,7 +3,7 @@
   "description": "Gulp-plugin to interoperate with eXist-db",
   "main": "index.js",
   "scripts": {
-    "test": "standard && tape spec/*.js",
+    "test": "standard --fix && tape spec/*.js",
     "semantic-release": "semantic-release"
   },
   "repository": {
