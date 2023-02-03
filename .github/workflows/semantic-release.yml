@@ -13,7 +13,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         node-version: [14, 16, 18]
-        exist-version: [latest, release, 5.4.1, 4.10.0]
+        exist-version: [latest, release, 5.5.1, 4.11.1]
     services:
       # Label used to access the service container
       exist:
