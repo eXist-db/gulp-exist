@@ -309,12 +309,16 @@ function install (client, options) {
 
     client.app.upload(file.contents, xarName)
       .then(response => {
-        if (!response.success) { return callback(new PluginError('gulp-exist', 'XAR was not uploaded')) }
+        if (!response.success) {
+          return callback(new PluginError('gulp-exist', `XAR was not uploaded: ${response.error}`))
+        }
         log(`Install ${xarName}`)
         return client.app.install(xarName, customPackageRepoUrl)
       })
       .then(response => {
-        if (!response.success) { return callback(new PluginError('gulp-exist', 'XAR Installation failed')) }
+        if (!response.success) {
+          return callback(new PluginError('gulp-exist', `XAR Installation failed: ${response.error}`))
+        }
         if (response.result.update) {
           log('Application was updated')
           return callback(null, response)
