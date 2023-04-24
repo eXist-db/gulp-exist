@@ -50,7 +50,7 @@
     "@existdb/node-exist": "^5.4.0",
     "chokidar": "^3.5.3",
     "fancy-log": "^2.0.0",
-    "glob-stream": "^7.0.0",
+    "glob-stream": "^8.0.0",
     "gulp": "^4.0.2",
     "lodash.assign": "^4.2.0",
     "plugin-error": "^2.0.1",
