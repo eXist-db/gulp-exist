@@ -42,7 +42,7 @@
   "homepage": "https://github.com/eXist-db/gulp-exist#readme",
   "devDependencies": {
     "@semantic-release/github": "^8.0.7",
-    "semantic-release": "^20.1.1",
+    "semantic-release": "^21.0.5",
     "standard": "^17.0.0",
     "tape": "^5.6.3"
   },
