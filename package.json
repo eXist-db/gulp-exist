@@ -41,17 +41,14 @@
   },
   "homepage": "https://github.com/eXist-db/gulp-exist#readme",
   "devDependencies": {
-    "@semantic-release/github": "^8.0.7",
-    "semantic-release": "^20.1.1",
-    "standard": "^17.0.0",
-    "tape": "^5.6.3"
+    "semantic-release": "^23.0.8",
+    "standard": "^17.1.0",
+    "tape": "^5.7.5"
   },
   "dependencies": {
-    "@existdb/node-exist": "^5.4.0",
-    "chokidar": "^3.5.3",
+    "@existdb/node-exist": "^5.5.1",
     "fancy-log": "^2.0.0",
-    "glob-stream": "^7.0.0",
-    "gulp": "^4.0.2",
+    "gulp": "^5.0.0",
     "lodash.assign": "^4.2.0",
     "plugin-error": "^2.0.1",
     "through2": "^4.0.2",
@@ -60,9 +57,5 @@
   "version": "0.0.0-development",
   "publishConfig": {
     "access": "public"
-  },
-  "overrides": {
-    "chokidar": "$chokidar",
-    "glob-stream": "$glob-stream"
   }
 }
