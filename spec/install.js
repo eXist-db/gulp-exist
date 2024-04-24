@@ -18,7 +18,7 @@ test('install XAR package', function (t) {
       .catch(end)
   }
 
-  return src('test-app.xar', { cwd: 'spec/files', encoding: false })
+  return src('spec/files/test-app.xar', { encoding: false })
     .pipe(testClient.install())
     .on('data', function (d) {
       t.plan(3)
