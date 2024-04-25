@@ -10,9 +10,9 @@
 ## Prerequisites
 
 In order to make use of `gulp-exist` you will need to have 
-[gulp](https://gulpjs.com/docs/en/getting-started/quick-start) installed (in version 4 or later).
+[gulp](https://gulpjs.com/docs/en/getting-started/quick-start) installed (in version 5 or later).
 
-And a running [existdb](https://exist-db.org) instance, of course (version 4.7.1 or higher recommended).
+And a running [existdb](https://exist-db.org) instance, of course (version 4.11.1 or higher recommended).
 
 ## Installation
 
@@ -27,8 +27,8 @@ npm install --save-dev gulp @existdb/gulp-exist
 Then create a file with the name `gulpfile.js` in the root of your project with the following contents
 
 ```js
-const {src} = require('gulp'),
-    {createClient} = require('@existdb/gulp-exist')
+const { src } = require('gulp'),
+    { createClient } = require('@existdb/gulp-exist')
 
 // authenticate against local eXist instance for development 
 const connectionOptions = {
@@ -42,8 +42,8 @@ const exClient = createClient(connectionOptions)
 
 // deploy all
 function deploy () {
-    return src('**/*', {cwd: 'build'})
-        .pipe(exClient.dest({target: '/db/apps/myapp/'}))
+    return src('**/*', { cwd: 'build', encoding: false })
+        .pipe(exClient.dest({ target: '/db/apps/myapp/' }))
 }
 
 exports.default = deploy
@@ -77,14 +77,14 @@ With the below setup the connection is then controlled by the variables
 in the environment.  
 
 ```js
-const {src} = require('gulp')
-const {createClient, readOptionsFromEnv} = require('@existdb/gulp-exist')
+const { src } = require('gulp')
+const { createClient, readOptionsFromEnv } = require('@existdb/gulp-exist')
 const exClient = createClient(readOptionsFromEnv())
 
 // deploy all
 function deploy () {
-    return src('**/*', {cwd: 'build'})
-        .pipe(exClient.dest({target: '/db/apps/myapp/'}))
+    return src('**/*', { cwd: 'build', encoding: false })
+        .pipe(exClient.dest({ target: '/db/apps/myapp/' }))
 }
 
 exports.default = deploy
@@ -175,19 +175,22 @@ Default: `true`
 Connecting to a remote server using a secure connection.
 
 ```js
-const {createClient} = require('@existdb/gulp-exist')
+const { createClient } = require('@existdb/gulp-exist')
 const exClient = createClient({
     host: "my-server.tld",
     secure: true,
     port: 443,
-    basic_auth: { user: "app", pass: "1 handmade eclectic eclaire" }
+    basic_auth: {
+        user: "app",
+        pass: "1 handmade eclectic eclaire"
+    }
 })
 ```
 
 Connecting to localhost server using a insecure connection.
 
 ```js
-const {createClient} = require('@existdb/gulp-exist')
+const { createClient } = require('@existdb/gulp-exist')
 const exClient = createClient({
     host: "localhost",
     secure: false,
@@ -250,7 +253,7 @@ const exist = createClient({
 })
 
 function deployWithPermissions () {
-    return src('**/*', {cwd: '.'})
+    return src('**/*', { cwd: '.', encoding: false })
         .pipe(exist.dest({
             target: '/db/apps/myapp/',
             permissions: { 'controller.xql': 'rwxr-xr-x' }
@@ -290,7 +293,7 @@ const exist = createClient({
 })
 
 function install () {
-    return src('spec/files/test-app.xar')
+    return src('spec/files/test-app.xar', { encoding: false })
         .pipe(exist.install())
 }
 ```
@@ -326,9 +329,9 @@ const html5AsBinary = true        // upload HTML5 templates as binary
 
 
 function deployNewer () {
-	return src('**/*', {cwd: '.'})
-		.pipe(exist.newer({target}))
-		.pipe(exist.dest({target, html5AsBinary}));
+	return src('**/*', { cwd: '.', encoding: false })
+		.pipe(exist.newer({ target }))
+		.pipe(exist.dest({ target, html5AsBinary }));
 }
 
 exports.default = deployNewer
@@ -405,14 +408,14 @@ const queryConfig = {
 }
 
 function deployCollectionXConf () {
-	return src('collection.xconf', {cwd: '.'})
+	return src('collection.xconf', { cwd: '.' })
 		.pipe(exist.dest({
             target: `/db/system/config${queryConfig.target}`
         }))
 }
 
 function reindex () {
-	return src('scripts/reindex.xq', {cwd: '.'})
+	return src('scripts/reindex.xq', { cwd: '.' })
 		.pipe(exist.query(queryConfig))
         .pipe(dest('logs'))
 }
@@ -457,7 +460,7 @@ const queryConfig = {
 }
 
 function runQueryWithVariable () {
-	return src('scripts/var.xq', {cwd: '.'})
+	return src('scripts/var.xq', { cwd: '.' })
 		.pipe(exist.query(queryConfig))
         .pipe(dest('logs'))
 }
@@ -514,7 +517,8 @@ const exist = createClient(connectionOptions)
 function deployBuild () {
     return src('build/**/*', {
             base: 'build',
-            since: lastRun(deployBuild) 
+            since: lastRun(deployBuild),
+            encoding: false
         })
         .pipe(exist.dest({target}))
 }
@@ -550,14 +554,14 @@ function build {
 }
 
 function xar () {
-    return src('build/**/*', {base: 'build'})
+    return src('build/**/*', { base: 'build', encoding: false })
             .pipe(zip(`${pkg.abbrev}-${pkg.version}.xar`))
             .pipe(dest("."));
 }
 
 function install () {
-    return src(`${pkg.abbrev}-${pkg.version}.xar`)
-      .pipe(exist.install({packageUri: "http://myapp"}))
+    return src(`${pkg.abbrev}-${pkg.version}.xar`, { encoding: false })
+      .pipe(exist.install({ packageUri: "http://myapp" }))
 }
 
 exports.default = series(build, xar, install)
