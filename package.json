@@ -42,7 +42,7 @@
   "homepage": "https://github.com/eXist-db/gulp-exist#readme",
   "devDependencies": {
     "standard": "^17.1.0",
-    "tape": "^5.7.5"
+    "tape": "^5.8.1"
   },
   "dependencies": {
     "@existdb/node-exist": "^5.5.1",
