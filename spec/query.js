@@ -16,15 +16,13 @@ test('run query, expect XML', function (t) {
       xqlOutputExt: 'xml'
     }))
     .on('data', function (d) {
-      // console.log(d.contents.toString())
-      // console.log(d.relative.toString())
       t.ok(d.relative.match(/^test\.(.*)?\.xml$/), 'expected filename')
       t.ok(d.contents.toString() === '<result>beep</result>', 'expected contents')
+      t.end()
     })
     .on('error', e => {
       t.fail(e)
     })
-    .on('finish', _ => t.end())
 })
 
 test('run query, expect json', function (t) {
@@ -43,9 +41,9 @@ test('run query, expect json', function (t) {
       t.ok(Array.isArray(parsedContents.item), 'item(s) is an array')
       // all values are strings by default
       t.deepEqual(parsedContents.item, ['1', '2', '3'], 'all items present')
+      t.end()
     })
     .on('error', e => t.fail(e))
-    .on('finish', _ => t.end())
 })
 
 test('run query with variables', function (t) {
@@ -65,7 +63,7 @@ test('run query with variables', function (t) {
       // inspect the results
       // result should be the string set by the variables object in the query params
       t.equal(contents, 'test', 'variable has been set')
+      t.end()
     })
     .on('error', e => t.fail(e))
-    .on('finish', _ => t.end())
 })
