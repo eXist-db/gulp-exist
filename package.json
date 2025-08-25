@@ -47,7 +47,7 @@
   "dependencies": {
     "@existdb/node-exist": "^5.5.2",
     "fancy-log": "^2.0.0",
-    "gulp": "^5.0.0",
+    "gulp": "^5.0.1",
     "lodash.assign": "^4.2.0",
     "plugin-error": "^2.0.1",
     "streamx": "^2.22.0"
