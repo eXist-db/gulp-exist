@@ -3,6 +3,9 @@
   "type": "module",
   "description": "Gulp-plugin to interoperate with eXist-db",
   "main": "index.js",
+  "engines": {
+    "node": "^20.19.0 || >=22.11.0"
+  },
   "scripts": {
     "test": "standard && tape spec/*.js",
     "semantic-release": "semantic-release",
