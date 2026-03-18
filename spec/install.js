@@ -1,16 +1,15 @@
-const test = require('tape')
+import test from 'tape'
+import { src } from 'gulp'
+import { getXmlRpcClient } from '@existdb/node-exist'
+import { createClient } from '../index.js'
 
-const { src } = require('gulp')
-const { connect } = require('@existdb/node-exist')
-const { createClient } = require('../index')
-
-const connectionOptions = require('./dbconnection')
+import connectionOptions from './dbconnection.js'
 
 test('install XAR package', function (t) {
   const testClient = createClient(connectionOptions)
   const packageUri = 'http://exist-db.org/apps/test-app'
   const packageTarget = '/db/apps/test-app'
-  const db = connect(connectionOptions)
+  const db = getXmlRpcClient(connectionOptions)
   function tearDown (e) {
     const end = _ => e ? t.fail(e) : t.end()
     db.app.remove(packageUri)

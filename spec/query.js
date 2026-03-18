@@ -1,9 +1,9 @@
 // tests
 
-const { src } = require('gulp')
-const test = require('tape')
-const { createClient } = require('../index')
-const connectionOptions = require('./dbconnection')
+import { src } from 'gulp'
+import test from 'tape'
+import { createClient } from '../index.js'
+import connectionOptions from './dbconnection.js'
 const srcOptions = { cwd: 'spec/files' }
 
 const targetCollection = '/tmp'

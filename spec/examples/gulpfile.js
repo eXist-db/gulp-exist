@@ -1,21 +1,23 @@
 /**
  * an example gulpfile to make ant-less existdb package builds a reality
  */
-const { src, dest, watch, series, parallel, lastRun } = require('gulp')
-const { createClient } = require('@existdb/gulp-exist')
+import { src, dest, watch, series, parallel, lastRun } from 'gulp'
+import { createClient } from '@existdb/gulp-exist'
 
-const del = require('delete')
-const zip = require('gulp-zip')
-const replace = require('gulp-replace')
-const rename = require('gulp-rename')
+import del from 'delete'
+import zip from 'gulp-zip'
+import replace from 'gulp-replace'
+import rename from 'gulp-rename'
 
-const sass = require('gulp-sass')
-const uglify = require('gulp-uglify-es').default
+import sass from 'gulp-sass'
+import uglify from 'gulp-uglify-es'
 
-const pkg = require('./package.json')
+import { readFileSync } from 'fs'
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
 
 // read metadata from .existdb.json
-const existJSON = require('./.existdb.json')
+const existJSON = JSON.parse(readFileSync(new URL('./.existdb.json', import.meta.url), 'utf8'))
 const serverInfo = existJSON.servers.localhost
 const packageUri = existJSON.package.ns
 

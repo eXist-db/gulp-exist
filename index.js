@@ -7,13 +7,13 @@
  */
 
 // dependencies
-const os = require('os')
-const { Transform } = require('streamx')
-const log = require('fancy-log')
-const PluginError = require('plugin-error')
-const assign = require('lodash.assign')
-const Path = require('path')
-const { connect, getMimeType, defineMimeTypes, readOptionsFromEnv } = require('@existdb/node-exist')
+import os from 'os'
+import { Transform } from 'streamx'
+import log from 'fancy-log'
+import PluginError from 'plugin-error'
+import assign from 'lodash.assign'
+import Path from 'path'
+import { getXmlRpcClient, getMimeType, defineMimeTypes, readOptionsFromEnv } from '@existdb/node-exist'
 
 /**
  * @typedef {Object} GulpExistConnectionOptions
@@ -342,7 +342,7 @@ function install (client, options) {
 function createClient (options) {
   // TODO sanity checks
   const _options = assign({}, defaultRPCoptions, options)
-  const client = connect(_options)
+  const client = getXmlRpcClient(_options)
   return {
     dest: dest.bind(null, client),
     query: query.bind(null, client),
@@ -351,7 +351,7 @@ function createClient (options) {
   }
 }
 
-module.exports = {
+export {
   createClient,
   defineMimeTypes,
   getMimeType,

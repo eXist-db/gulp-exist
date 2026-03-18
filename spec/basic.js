@@ -1,5 +1,5 @@
-const test = require('tape')
-const { getMimeType, defineMimeTypes, createClient } = require('../index')
+import test from 'tape'
+import { getMimeType, defineMimeTypes, createClient } from '../index.js'
 
 const XQExtensions = ['xq', 'xqs', 'xql', 'xqm', 'xquery']
 const XMLExtensions = ['xconf', 'odd']

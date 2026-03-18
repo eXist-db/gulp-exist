@@ -1,13 +1,13 @@
-const { src } = require('gulp')
-const test = require('tape')
-const { createClient } = require('../index')
-const { connect } = require('@existdb/node-exist')
+import { src } from 'gulp'
+import test from 'tape'
+import { createClient } from '../index.js'
+import { getXmlRpcClient } from '@existdb/node-exist'
+
+import connectionOptions from './dbconnection.js'
 
 const srcOptions = { cwd: 'spec/files' }
 
 const targetCollection = '/tmp'
-
-const connectionOptions = require('./dbconnection')
 
 // well formed xml
 test('well-formed-xml', function (t) {
@@ -36,7 +36,7 @@ test('xql-change-perms', function (t) {
     .on('error', e => t.end(e))
     .on('finish', function () {
       t.pass('uploaded')
-      const db = connect(connectionOptions)
+      const db = getXmlRpcClient(connectionOptions)
       db.resources.getPermissions(targetCollection + '/test.xql')
         .then(function (result) {
           t.ok(result.permissions === 493, 'permissions correctly set')
