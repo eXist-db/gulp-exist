@@ -1,40 +1,32 @@
-import test from 'tape'
+import { test } from 'node:test'
+import assert from 'node:assert'
 import { getMimeType, defineMimeTypes, createClient } from '../index.js'
 
 const XQExtensions = ['xq', 'xqs', 'xql', 'xqm', 'xquery']
 const XMLExtensions = ['xconf', 'odd']
 
-test('check registered xquery file extensions', function (t) {
-  for (const index in XQExtensions) {
-    const extension = XQExtensions[index]
-    t.equals(getMimeType('test.' + extension), 'application/xquery', extension + ' checked')
+test('check registered xquery file extensions', () => {
+  for (const extension of XQExtensions) {
+    assert.strictEqual(getMimeType(`test.${extension}`), 'application/xquery', `${extension} checked`)
   }
-  t.end()
 })
 
-test('check registered XML file extensions', function (t) {
-  for (const index in XMLExtensions) {
-    const extension = XMLExtensions[index]
-    t.equals(getMimeType('test.' + extension), 'application/xml', extension + ' checked')
+test('check registered XML file extensions', () => {
+  for (const extension of XMLExtensions) {
+    assert.strictEqual(getMimeType(`test.${extension}`), 'application/xml', `${extension} checked`)
   }
-  t.end()
 })
 
-test('extend mime type definitions', function (t) {
+test('extend mime type definitions', () => {
   defineMimeTypes({ 'text/foo': ['bar'] })
-  t.equals(getMimeType('test.bar'), 'text/foo')
-  t.end()
+  assert.strictEqual(getMimeType('test.bar'), 'text/foo')
 })
 
-test('create connection with default settings', function (t) {
+test('create connection with default settings', () => {
   const testClient = createClient()
-  t.equals(typeof testClient.dest, 'function')
-  t.equals(typeof testClient.query, 'function')
-  t.equals(typeof testClient.newer, 'function')
-  t.end()
+  assert.strictEqual(typeof testClient.dest, 'function')
+  assert.strictEqual(typeof testClient.query, 'function')
+  assert.strictEqual(typeof testClient.newer, 'function')
 })
 
-test('check-user-permission', function (t) {
-  t.skip('not implemented yet')
-  t.end()
-})
+test.skip('check-user-permission', () => {})
