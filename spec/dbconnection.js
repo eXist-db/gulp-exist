@@ -10,11 +10,11 @@
  *     must be set for EXISTDB_USER to take effect
  */
 
-const { readOptionsFromEnv } = require('../index')
+import { readOptionsFromEnv } from '../index.js'
 
 const connectionOption = readOptionsFromEnv()
 if (!connectionOption.basic_auth) {
   connectionOption.basic_auth = { user: 'admin', pass: '' }
 }
 
-module.exports = connectionOption
+export default connectionOption

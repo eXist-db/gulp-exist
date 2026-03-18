@@ -1,5 +1,5 @@
-const test = require('tape')
-const { readOptionsFromEnv } = require('../index')
+import test from 'tape'
+import { readOptionsFromEnv } from '../index.js'
 
 test('read connection options from environment', function (t) {
   t.equal(typeof readOptionsFromEnv, 'function')

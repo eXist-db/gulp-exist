@@ -1,10 +1,12 @@
 {
   "name": "@existdb/gulp-exist",
+  "type": "module",
   "description": "Gulp-plugin to interoperate with eXist-db",
   "main": "index.js",
   "scripts": {
-    "test": "standard --fix && tape spec/*.js",
-    "semantic-release": "semantic-release"
+    "test": "standard && tape spec/*.js",
+    "semantic-release": "semantic-release",
+    "lint": "standard --fix"
   },
   "repository": {
     "type": "git",
@@ -45,7 +47,7 @@
     "tape": "^5.9.0"
   },
   "dependencies": {
-    "@existdb/node-exist": "^5.5.2",
+    "@existdb/node-exist": "^7.0.0",
     "fancy-log": "^2.0.0",
     "gulp": "^5.0.1",
     "lodash.assign": "^4.2.0",

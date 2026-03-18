@@ -1,16 +1,16 @@
-const { src } = require('gulp')
-const test = require('tape')
-const { createClient } = require('../index')
-const { connect } = require('@existdb/node-exist')
+import { src } from 'gulp'
+import test from 'tape'
+import { createClient } from '../index.js'
+import { getXmlRpcClient } from '@existdb/node-exist'
+
+import connectionOptions from './dbconnection.js'
 
 const srcOptions = { cwd: 'spec/files' }
 
 const targetCollection = '/tmp'
 
-const connectionOptions = require('./dbconnection')
-
 function teardown (t) {
-  const db = connect(connectionOptions)
+  const db = getXmlRpcClient(connectionOptions)
   db.collections.remove(targetCollection)
     .then(_ => t.end())
     .catch(e => t.end(e))
@@ -19,7 +19,7 @@ function teardown (t) {
 async function checkContents (st) {
   st.plan(2)
   try {
-    const db = connect(connectionOptions)
+    const db = getXmlRpcClient(connectionOptions)
     await db.resources.describe(targetCollection + '/test.xml')
     st.pass('test.xql exists')
     await db.resources.describe(targetCollection + '/collection/test.xml')
