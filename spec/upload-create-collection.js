@@ -1,72 +1,55 @@
+import { test } from 'node:test'
+import assert from 'node:assert'
+
 import { src } from 'gulp'
-import test from 'tape'
 import { createClient } from '../index.js'
 import { getXmlRpcClient } from '@existdb/node-exist'
-
 import connectionOptions from './dbconnection.js'
 
 const srcOptions = { cwd: 'spec/files' }
-
 const targetCollection = '/tmp'
 
-function teardown (t) {
+async function teardown () {
   const db = getXmlRpcClient(connectionOptions)
-  db.collections.remove(targetCollection)
-    .then(_ => t.end())
-    .catch(e => t.end(e))
+  await db.collections.remove(targetCollection)
 }
 
-async function checkContents (st) {
-  st.plan(2)
-  try {
-    const db = getXmlRpcClient(connectionOptions)
-    await db.resources.describe(targetCollection + '/test.xml')
-    st.pass('test.xql exists')
-    await db.resources.describe(targetCollection + '/collection/test.xml')
-    st.pass('collection/test.xql exists')
-    st.end()
-  } catch (e) {
-    st.end(e)
-  }
+async function checkContents (t) {
+  const db = getXmlRpcClient(connectionOptions)
+  const r1 = await db.resources.describe(targetCollection + '/test.xml')
+  assert.ok(r1, 'resource exists at expected path')
+  const r2 = await db.resources.describe(targetCollection + '/collection/test.xml')
+  assert.ok(r2, 'resource exists at expected path')
 }
 
 // collections and resources are created and have the correct path
-test('create collections and resources (target has trailing slash)', function (t) {
+test('create collections and resources (target has trailing slash)', async (t) => {
   const testClient = createClient(connectionOptions)
-  const trailingSlashTarget = targetCollection + '/'
+  const trailingSlashTarget = `${targetCollection}/`
 
-  t.test('setup', function (st) {
+  await t.test('setup', (st, done) => {
     src('**/test.xml', srcOptions)
-      .pipe(testClient.dest({
-        target: trailingSlashTarget
-      }))
-      .on('error', e => {
-        st.error(e)
-        st.end()
-      })
-      .on('finish', _ => st.end())
+      .pipe(testClient.dest({ target: trailingSlashTarget }))
+      .on('error', e => st.fail(e))
+      .on('finish', done)
   })
 
-  t.test('check contents', checkContents)
-  t.test('tearDown', teardown)
+  await t.test('check contents', checkContents)
+
+  await t.test('tearDown', teardown)
 })
 
-test('create collections and resources (target has trailing slash)', function (t) {
+test('create collections and resources (target has no trailing slash)', async (t) => {
   const testClient = createClient(connectionOptions)
 
-  t.test('setup', function (st) {
+  await t.test('setup', (st, done) => {
     src('**/test.xml', srcOptions)
-      .pipe(testClient.dest({
-        target: targetCollection
-      }))
-      .on('error', e => {
-        st.error(e)
-        st.end()
-      })
-      .on('finish', _ => st.end())
+      .pipe(testClient.dest({ target: targetCollection }))
+      .on('error', e => st.fail(e))
+      .on('finish', done)
   })
 
-  t.test('check contents', checkContents)
+  await t.test('check contents', checkContents)
 
-  t.test('tearDown', teardown)
+  await t.test('tearDown', teardown)
 })

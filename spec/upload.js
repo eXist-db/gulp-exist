@@ -1,110 +1,89 @@
+import { test } from 'node:test'
+import assert from 'node:assert'
 import { src } from 'gulp'
-import test from 'tape'
 import { createClient } from '../index.js'
 import { getXmlRpcClient } from '@existdb/node-exist'
 
 import connectionOptions from './dbconnection.js'
 
 const srcOptions = { cwd: 'spec/files' }
+const targetCollection = '/upload-tests'
 
-const targetCollection = '/tmp'
-
-// well formed xml
-test('well-formed-xml', function (t) {
+test('well-formed xml upload succeeds', (t, done) => {
   const testClient = createClient(connectionOptions)
   src('test.xml', srcOptions)
-    .pipe(testClient.dest({
-      target: targetCollection
-    }))
-    .on('error', e => t.end(e))
-    .on('finish', _ => {
-      t.ok('finished')
-      t.end()
-    })
+    .pipe(testClient.dest({ target: targetCollection }))
+    .on('error', e => t.fail(e))
+    .on('finish', done)
 })
 
-// xquery file with permission changes
-test('xql-change-perms', function (t) {
+test('xquery file upload with permission changes', (t, done) => {
   const testClient = createClient(connectionOptions)
   src('test.xql', srcOptions)
     .pipe(testClient.dest({
       target: targetCollection,
-      permissions: {
-        'test.xql': 'rwxr-xr-x'
-      }
+      permissions: { 'test.xql': 'rwxr-xr-x' }
     }))
-    .on('error', e => t.end(e))
-    .on('finish', function () {
-      t.pass('uploaded')
+    .on('error', e => t.fail(e))
+    .on('finish', async () => {
       const db = getXmlRpcClient(connectionOptions)
-      db.resources.getPermissions(targetCollection + '/test.xql')
-        .then(function (result) {
-          t.ok(result.permissions === 493, 'permissions correctly set')
-          t.end()
-        })
-        .catch(e => t.end(e))
+      const resourcePath = `${targetCollection}/test.xql`
+      const result = await db.resources.getPermissions(resourcePath)
+      assert.strictEqual(result.permissions, 493, 'permissions correctly set')
+      done()
     })
 })
 
-// upload HTML5 file without retry
-test('up-html5-no-retry', function (t) {
+test('upload html5 file without retry errors', (t, done) => {
   const testClient = createClient(connectionOptions)
   src('test.html', srcOptions)
-    .pipe(testClient.dest({
-      target: targetCollection
-    }))
-    .on('error', e => {
-      t.ok(e, 'errored')
-      t.end()
+    .pipe(testClient.dest({ target: targetCollection }))
+    .on('error', r => {
+      assert.ok(r)
+      done()
     })
-    .on('finish', _ => t.end(false))
+    .on('finish', () => {
+      t.fail('expected an error')
+    })
 })
 
-// upload HTML5 file with retry
-test('up-html5-with-retry', function (t) {
+test('upload html5 file with retry succeeds', (t, done) => {
   const testClient = createClient(connectionOptions)
   src('test.html', srcOptions)
-    .pipe(testClient.dest({
-      target: targetCollection,
-      html5AsBinary: true
-    }))
-    .on('finish', function () {
-      t.ok('finished')
-      t.end()
+    .pipe(testClient.dest({ target: targetCollection, html5AsBinary: true }))
+    .on('error', e => t.fail(e))
+    .on('finish', r => {
+      console.log(r)
+      // assert.ok(r, 'expected successful upload')
+      done()
     })
-    .on('error', e => t.end(e))
 })
 
-test('non well formed XML will not be uploaded as binary', function (t) {
+test('invalid xml will not be uploaded as binary', (t, done) => {
   const testClient = createClient(connectionOptions)
   src('invalid.xml', srcOptions)
-    .pipe(testClient.dest({
-      target: targetCollection,
-      html5AsBinary: true
-    }))
-    .on('error', _ => {
-      t.pass('invalid XML was not uploaded')
-      t.end()
+    .pipe(testClient.dest({ target: targetCollection, html5AsBinary: true }))
+    .on('error', e => {
+      assert.ok(e, 'expected error for invalid XML')
+      done()
     })
-    .on('finish', _ => t.end())
+    .on('finish', r => t.fail(r))
 })
 
-// with newer (should not re-send any file)
-test('newer-no-resend', function (t) {
+test('newer filter only includes files newer than remote', (t, done) => {
   const testClient = createClient(connectionOptions)
-  let files = 0
+  const seen = new Set()
+
   src('test.*', srcOptions)
     .pipe(testClient.newer({ target: targetCollection }))
     .on('data', function (c) {
-      files += 1
-      if (c.relative === 'test.json.xql') {
-        return t.ok(true, 'found test.json.xql')
-      }
-      t.fail('attempted to send the file: ' + c.relative)
+      seen.add(c.relative)
     })
-    .on('finish', function () {
-      t.ok(files === 1, 'all but one file filtered')
-      t.end()
+    .on('finish', () => {
+      console.log(seen)
+      assert.equal(seen.size, 1, 'expected only one file to be sent')
+      assert.ok(seen.has('test.json.xql'), 'expected at least the new JSON query file to be sent')
+      done()
     })
-    .on('error', e => t.end(e))
+    .on('error', e => t.fail(e))
 })
