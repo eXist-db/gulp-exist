@@ -5,5 +5,16 @@ updates:
   schedule:
     interval: weekly
     time: "03:00"
+  commit-message:
+      prefix: "chore(deps)"
+  versioning-strategy: increase-if-necessary
   open-pull-requests-limit: 10
-  versioning-strategy: increase
+- package-ecosystem: github-actions
+  directory: "/"
+  schedule:
+    interval: weekly
+    time: "04:00"
+  commit-message:
+      prefix: "chore(github-actions)"
+  versioning-strategy: increase-if-necessary
+  open-pull-requests-limit: 10
