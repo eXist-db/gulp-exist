@@ -54,7 +54,7 @@
     "gulp": "^5.0.1",
     "lodash.assign": "^4.2.0",
     "plugin-error": "^2.0.1",
-    "streamx": "^2.23.0"
+    "streamx": "^2.25.0"
   },
   "version": "0.0.0-development",
   "publishConfig": {
