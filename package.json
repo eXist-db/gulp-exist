@@ -59,5 +59,8 @@
   "version": "0.0.0-development",
   "publishConfig": {
     "access": "public"
+  },
+  "overrides": {
+    "undici": "7.29.0"
   }
 }
